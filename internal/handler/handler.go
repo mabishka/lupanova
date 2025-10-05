@@ -1,0 +1,82 @@
+package handler
+
+import (
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+
+	"github.com/mabishka/lupanova/internal/service"
+)
+
+type StorageServer struct {
+	service.Storage
+}
+
+func New(addr string) *StorageServer {
+	return &StorageServer{Storage: service.New(addr)}
+}
+
+// Эндпоинт с методом POST и путём /.
+// Сервер принимает в теле запроса строку URL как text/plain
+// и возвращает ответ с кодом 201 и сокращённым URL как text/plain.
+func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	contentType := r.Header.Get("Content-Type")
+	if contentType != "text/plain" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Читаем тело запроса
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
+
+	full := strings.TrimSpace(string(body))
+	if _, err := url.ParseRequestURI(full); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	short, err := p.GetShortUrl(full)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(short))
+}
+
+// Эндпоинт с методом GET и путём /{id},
+// где id — идентификатор сокращённого URL (например, /EwHXdJfB).
+// В случае успешной обработки запроса сервер возвращает ответ с кодом 307
+// и оригинальным URL в HTTP-заголовке Location.
+func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	id := r.PathValue("id")
+
+	full, err := p.GetFullUrl(id)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Location", full)
+	w.WriteHeader(http.StatusTemporaryRedirect)
+}
