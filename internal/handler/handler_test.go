@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -8,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,11 +28,11 @@ func TestHandlerPostFull(t *testing.T) {
 	}
 
 	server := New(addr)
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", server.HandlerPostFull)
-	mux.HandleFunc("/{id}", server.HandlerGetFull)
+	router := chi.NewRouter()
+	router.Post("/", server.HandlerPostFull)
+	router.Get("/{id}", server.HandlerGetFull)
 
-	go http.ListenAndServe(addr, mux)
+	go http.ListenAndServe(addr, router)
 
 	haveMethod := http.MethodPost
 	haveBody := "http://ya.ru"
@@ -98,7 +100,7 @@ func TestHandlerPostFull(t *testing.T) {
 			r := httptest.NewRequest(test.have.method, `/`, body)
 			r.Header.Add("Content-Type", test.have.contentType)
 			w := httptest.NewRecorder()
-			mux.ServeHTTP(w, r)
+			server.HandlerPostFull(w, r)
 
 			result := w.Result()
 			haveShort, _ := io.ReadAll(result.Body)
@@ -128,11 +130,11 @@ func TestHandlerGetFull(t *testing.T) {
 	}
 
 	server := New(addr)
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", server.HandlerPostFull)
-	mux.HandleFunc("/{id}", server.HandlerGetFull)
+	router := chi.NewRouter()
+	router.Post("/", server.HandlerPostFull)
+	router.Get("/{id}", server.HandlerGetFull)
 
-	go http.ListenAndServe(addr, mux)
+	go http.ListenAndServe(addr, router)
 
 	haveMethod := http.MethodGet
 	full := "http://yandex.ru"
@@ -173,7 +175,7 @@ func TestHandlerGetFull(t *testing.T) {
 			name: "negative id",
 			have: have{
 				method:  haveMethod,
-				request: "/srftgnj/",
+				request: "/srftgnj",
 			},
 			want: want{
 				code:     http.StatusBadRequest,
@@ -185,7 +187,12 @@ func TestHandlerGetFull(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			r := httptest.NewRequest(test.have.method, test.have.request, nil)
 			w := httptest.NewRecorder()
-			mux.ServeHTTP(w, r)
+
+			ctx := chi.NewRouteContext()
+			r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, ctx))
+			ctx.URLParams.Add("id", test.have.request)
+
+			server.HandlerGetFull(w, r)
 
 			result := w.Result()
 			defer result.Body.Close()

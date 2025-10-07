@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/mabishka/lupanova/internal/service"
 )
 
@@ -87,7 +88,7 @@ func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := r.PathValue("id")
+	id := chi.URLParam(r, "id")
 
 	full, err := p.GetFull(id)
 	if err != nil {
