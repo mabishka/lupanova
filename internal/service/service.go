@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"net"
 	"net/url"
 	"strings"
 	"sync"
@@ -11,8 +10,8 @@ import (
 )
 
 type Storage interface {
-	GetShortUrl(full string) (string, error)
-	GetFullUrl(short string) (string, error)
+	GetShort(full string) (string, error)
+	GetFull(short string) (string, error)
 }
 
 type Server struct {
@@ -23,32 +22,16 @@ type Server struct {
 
 const shortLen = 8
 
-func New(addr string) *Server {
-	host, port, err := net.SplitHostPort(addr)
-	if err != nil {
-		panic(err)
-	}
-	if host == "" {
-		host = "localhost"
-	}
-	u := url.URL{
-		Host:   net.JoinHostPort(host, port),
-		Scheme: "http",
-	}
-	return &Server{RWMutex: &sync.RWMutex{}, list: make(map[string]string), u: u}
+func New() *Server {
+	return &Server{RWMutex: &sync.RWMutex{}, list: make(map[string]string)}
 }
 
-func (s *Server) createUrl(path string) string {
-	s.u.Path = path
-	return s.u.String()
-}
-
-func (p *Server) GetShortUrl(full string) (string, error) {
+func (p *Server) GetShort(full string) (string, error) {
 	p.Lock()
 	defer p.Unlock()
 	for k, v := range p.list {
 		if v == full {
-			return p.createUrl(k), nil
+			return k, nil
 		}
 	}
 
@@ -58,10 +41,10 @@ func (p *Server) GetShortUrl(full string) (string, error) {
 	}
 
 	p.list[short] = full
-	return p.createUrl(short), nil
+	return short, nil
 }
 
-func (p *Server) GetFullUrl(short string) (string, error) {
+func (p *Server) GetFull(short string) (string, error) {
 	p.RLock()
 	defer p.RUnlock()
 

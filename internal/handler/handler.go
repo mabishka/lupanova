@@ -2,6 +2,7 @@ package handler
 
 import (
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -11,10 +12,27 @@ import (
 
 type StorageServer struct {
 	service.Storage
+	u url.URL
 }
 
 func New(addr string) *StorageServer {
-	return &StorageServer{Storage: service.New(addr)}
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		panic(err)
+	}
+	if host == "" {
+		host = "localhost"
+	}
+	u := url.URL{
+		Host:   net.JoinHostPort(host, port),
+		Scheme: "http",
+	}
+	return &StorageServer{Storage: service.New(), u: u}
+}
+
+func (s *StorageServer) format(path string) string {
+	s.u.Path = path
+	return s.u.String()
 }
 
 // Эндпоинт с методом POST и путём /.
@@ -47,7 +65,7 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	short, err := p.GetShortUrl(full)
+	short, err := p.GetShort(full)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -55,7 +73,7 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(short))
+	w.Write([]byte(p.format(short)))
 }
 
 // Эндпоинт с методом GET и путём /{id},
@@ -71,7 +89,7 @@ func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
 
 	id := r.PathValue("id")
 
-	full, err := p.GetFullUrl(id)
+	full, err := p.GetFull(id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
