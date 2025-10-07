@@ -30,9 +30,9 @@ func New(addr string) *StorageServer {
 	return &StorageServer{Storage: service.New(), u: u}
 }
 
-func (s *StorageServer) format(path string) string {
-	s.u.Path = path
-	return s.u.String()
+func (p *StorageServer) format(path string) string {
+	p.u.Path = path
+	return p.u.String()
 }
 
 // Эндпоинт с методом POST и путём /.
