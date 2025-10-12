@@ -2,7 +2,9 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"net"
+	"net/url"
 	"strings"
 )
 
@@ -12,8 +14,7 @@ import (
 const (
 	defaultServerAddress = ""
 	defaultServerPort    = "8080"
-	defaultBaseAddress   = "localhost"
-	defaultBasePort      = "8080"
+	defaultBaseAddress   = "http://localhost:8080"
 )
 
 type Config struct {
@@ -24,17 +25,20 @@ type Config struct {
 func New() *Config {
 	res := &Config{}
 	flag.StringVar(&res.serverAddress, "a", ":8080", "адрес запуска HTTP-сервера")
-	flag.StringVar(&res.baseAddress, "b", "localhost:8080", "базовый адрес результирующего сокращённого URL")
+	flag.StringVar(&res.baseAddress, "b", defaultBaseAddress, "базовый адрес результирующего сокращённого URL")
 
 	flag.Parse()
 
-	res.serverAddress = validateAddress(res.serverAddress, defaultServerAddress, defaultServerPort)
-	res.baseAddress = validateAddress(res.baseAddress, defaultBaseAddress, defaultBasePort)
+	fmt.Println(res.serverAddress)
+	fmt.Println(res.baseAddress)
+
+	res.serverAddress = validateServerAddress(res.serverAddress, defaultServerAddress, defaultServerPort)
+	res.baseAddress = validateBaseAddress(res.baseAddress, defaultBaseAddress)
 
 	return res
 }
 
-func validateAddress(address, defaultAddress, defaultPort string) string {
+func validateServerAddress(address, defaultAddress, defaultPort string) string {
 	addrList := strings.Split(address, ":")
 	if len(addrList) < 1 || len(addrList) > 2 {
 		return net.JoinHostPort(defaultAddress, defaultPort)
@@ -43,9 +47,22 @@ func validateAddress(address, defaultAddress, defaultPort string) string {
 		addrList[0] = defaultAddress
 	}
 	if len(addrList) < 2 || addrList[1] == "" {
-		return net.JoinHostPort(addrList[0], defaultPort)
+		return addrList[0]
 	}
 	return net.JoinHostPort(addrList[0], addrList[1])
+}
+
+func validateBaseAddress(address, defaultAddress string) string {
+	u, err := url.Parse(address)
+	if err != nil {
+		return defaultAddress
+	}
+	if u.Scheme == "" || u.Host == "" {
+		return defaultAddress
+	}
+
+	fmt.Println(33, u.String())
+	return u.String()
 }
 
 func (c *Config) GetBaseAddress() string {

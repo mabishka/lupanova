@@ -12,14 +12,15 @@ import (
 
 type StorageServer struct {
 	service.Storage
-	u url.URL
+	u *url.URL
 }
 
 func New(address string) *StorageServer {
-	u := url.URL{
-		Host:   address,
-		Scheme: "http",
+	u, err := url.Parse(address)
+	if err != nil {
+		panic(err)
 	}
+
 	return &StorageServer{Storage: service.New(), u: u}
 }
 
