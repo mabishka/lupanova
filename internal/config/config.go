@@ -24,7 +24,7 @@ type Config struct {
 func New() *Config {
 	res := &Config{}
 	flag.StringVar(&res.serverAddress, "a", ":8080", "адрес запуска HTTP-сервера")
-	flag.StringVar(&res.baseAddress, "b", "http://localhost:8080/", "базовый адрес результирующего сокращённого URL")
+	flag.StringVar(&res.baseAddress, "b", "localhost:8080", "базовый адрес результирующего сокращённого URL")
 
 	flag.Parse()
 
