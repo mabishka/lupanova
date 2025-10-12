@@ -2,7 +2,6 @@ package handler
 
 import (
 	"io"
-	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -16,16 +15,9 @@ type StorageServer struct {
 	u url.URL
 }
 
-func New(addr string) *StorageServer {
-	host, port, err := net.SplitHostPort(addr)
-	if err != nil {
-		panic(err)
-	}
-	if host == "" {
-		host = "localhost"
-	}
+func New(address string) *StorageServer {
 	u := url.URL{
-		Host:   net.JoinHostPort(host, port),
+		Host:   address,
 		Scheme: "http",
 	}
 	return &StorageServer{Storage: service.New(), u: u}
