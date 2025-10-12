@@ -34,11 +34,6 @@ func (p *StorageServer) format(path string) string {
 // и возвращает ответ с кодом 201 и сокращённым URL как text/plain.
 func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) {
 
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "text/plain" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -75,11 +70,6 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 // В случае успешной обработки запроса сервер возвращает ответ с кодом 307
 // и оригинальным URL в HTTP-заголовке Location.
 func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
-
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
 
 	id := chi.URLParam(r, "id")
 

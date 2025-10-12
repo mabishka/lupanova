@@ -2,7 +2,6 @@ package config
 
 import (
 	"flag"
-	"fmt"
 	"net"
 	"net/url"
 	"strings"
@@ -28,9 +27,6 @@ func New() *Config {
 	flag.StringVar(&res.baseAddress, "b", defaultBaseAddress, "базовый адрес результирующего сокращённого URL")
 
 	flag.Parse()
-
-	fmt.Println(res.serverAddress)
-	fmt.Println(res.baseAddress)
 
 	res.serverAddress = validateServerAddress(res.serverAddress, defaultServerAddress, defaultServerPort)
 	res.baseAddress = validateBaseAddress(res.baseAddress, defaultBaseAddress)
@@ -61,7 +57,6 @@ func validateBaseAddress(address, defaultAddress string) string {
 		return defaultAddress
 	}
 
-	fmt.Println(33, u.String())
 	return u.String()
 }
 
