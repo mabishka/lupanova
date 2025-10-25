@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"sync"
 
@@ -17,7 +16,6 @@ type Storage interface {
 type Server struct {
 	*sync.RWMutex
 	list map[string]string // map [short string] full string
-	u    url.URL
 }
 
 const shortLen = 8

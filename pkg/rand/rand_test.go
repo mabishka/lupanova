@@ -3,8 +3,9 @@ package rand_test
 import (
 	"testing"
 
-	"github.com/mabishka/lupanova/pkg/rand"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/mabishka/lupanova/pkg/rand"
 )
 
 func TestCreateShort(t *testing.T) {
