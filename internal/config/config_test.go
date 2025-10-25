@@ -48,7 +48,7 @@ func Test_setAddress(t *testing.T) {
 			test.pre()
 			got := setAddress(test.have.envAddress, test.have.flagName, test.have.defaultAddress, test.have.description)
 
-			assert.Equal(t, test.want, got)
+			assert.Equal(t, test.want, *got)
 		})
 	}
 }
