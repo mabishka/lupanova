@@ -30,26 +30,25 @@ type Config struct {
 }
 
 func New() *Config {
-	res := &Config{
-		serverAddress: setAddress(envServerAddress, flagServerAddress, defaultServerAddress, descServerAddress),
-		baseAddress:   setAddress(envBaseAddress, flagBaseAddress, defaultBaseAddress, descBaseAddress),
-	}
+
+	serverAddress := setAddress(envServerAddress, flagServerAddress, defaultServerAddress, descServerAddress)
+	baseAddress := setAddress(envBaseAddress, flagBaseAddress, defaultBaseAddress, descBaseAddress)
 
 	flag.Parse()
 
-	res.serverAddress = validateServerAddress(res.serverAddress, defaultServerAddress)
-	res.baseAddress = validateBaseAddress(res.baseAddress, defaultBaseAddress)
-
-	return res
+	return &Config{
+		serverAddress: validateServerAddress(*serverAddress, defaultServerAddress),
+		baseAddress:   validateBaseAddress(*baseAddress, defaultBaseAddress),
+	}
 }
 
-func setAddress(envAddress, flagName, defaultAddress, description string) string {
+func setAddress(envAddress, flagName, defaultAddress, description string) *string {
 	if address, ok := os.LookupEnv(envAddress); ok && address != "" {
-		return address
+		return &address
 	}
 
 	address := flag.String(flagName, defaultAddress, description)
-	return *address
+	return address
 }
 
 func validateServerAddress(address, defaultAddress string) string {
