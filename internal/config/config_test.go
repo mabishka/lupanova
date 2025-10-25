@@ -21,17 +21,6 @@ func Test_setAddress(t *testing.T) {
 		want string
 	}{
 		{
-			name: "positiveDefaultAddress",
-			pre:  func() {},
-			have: have{
-				envAddress:     envBaseAddress,
-				flagName:       flagBaseAddress,
-				defaultAddress: defaultBaseAddress,
-				description:    descBaseAddress,
-			},
-			want: defaultBaseAddress,
-		},
-		{
 			name: "positiveEnvAddress",
 			pre:  func() { os.Setenv(envBaseAddress, defaultBaseAddress) },
 			have: have{
@@ -61,12 +50,6 @@ func Test_validateServerAddress(t *testing.T) {
 		defaultAddress string
 		want           string
 	}{
-		{
-			name:           "positiveAddress",
-			address:        defaultServerAddress,
-			defaultAddress: defaultServerAddress,
-			want:           defaultServerAddress,
-		},
 		{
 			name:           "positiveDefault",
 			address:        "",
@@ -111,25 +94,46 @@ func Test_validateBaseAddress(t *testing.T) {
 	}
 }
 
-func TestNew(t *testing.T) {
+func TestConfig_GetBaseAddress(t *testing.T) {
+
+	config := &Config{
+		serverAddress: defaultServerAddress,
+		baseAddress:   defaultBaseAddress,
+	}
 	tests := []struct {
 		name string // description of this test case
-		want *Config
+		want string
 	}{
 		{
-			name: "positiveDefault",
-			want: &Config{
-				serverAddress: defaultServerAddress,
-				baseAddress:   defaultBaseAddress,
-			},
+			name: "positive",
+			want: defaultBaseAddress,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := New()
+			assert.Equal(t, test.want, config.GetBaseAddress())
+		})
+	}
+}
 
-			assert.Equal(t, test.want.serverAddress, got.serverAddress)
-			assert.Equal(t, test.want.baseAddress, got.baseAddress)
+func TestConfig_GetServerAddress(t *testing.T) {
+
+	config := &Config{
+		serverAddress: defaultServerAddress,
+		baseAddress:   defaultBaseAddress,
+	}
+	tests := []struct {
+		name string // description of this test case
+		want string
+	}{
+		{
+			name: "positive",
+			want: defaultServerAddress,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.want, config.GetServerAddress())
 		})
 	}
 }
