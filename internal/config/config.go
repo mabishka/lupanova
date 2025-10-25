@@ -2,7 +2,6 @@ package config
 
 import (
 	"flag"
-	"fmt"
 	"os"
 
 	"net"
@@ -68,12 +67,9 @@ func validateServerAddress(address, defaultAddress string) string {
 func validateBaseAddress(address, defaultAddress string) string {
 	u, err := url.Parse(address)
 	if err != nil {
-		fmt.Println(err)
 		return defaultAddress
 	}
 
-	fmt.Println(u.Scheme)
-	fmt.Println(u.Host)
 	if u.Scheme == "" || u.Host == "" {
 		return defaultAddress
 	}
