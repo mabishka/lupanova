@@ -43,12 +43,11 @@ func New() *Config {
 }
 
 func setAddress(envAddress, flagName, defaultAddress, description string) *string {
+	flagaddress := flag.String(flagName, defaultAddress, description)
 	if address, ok := os.LookupEnv(envAddress); ok && address != "" {
 		return &address
 	}
-
-	address := flag.String(flagName, defaultAddress, description)
-	return address
+	return flagaddress
 }
 
 func validateServerAddress(address, defaultAddress string) string {
