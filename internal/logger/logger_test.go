@@ -81,6 +81,7 @@ func TestWithLogging(t *testing.T) {
 			got(w, r)
 
 			result := w.Result()
+			defer result.Body.Close()
 			assert.Equal(t, test.want, result.StatusCode, "status code")
 
 		})
