@@ -22,7 +22,7 @@ const (
 	envBaseAddress     = "BASE_URL"
 	descBaseAddress    = "базовый адрес результирующего сокращённого URL"
 
-	defaultLogLevel = "Info"
+	defaultLogLevel = "Debug"
 	flagLogLevel    = "l"
 	envLogLevel     = "LOG_LEVEL"
 	descLogLevel    = "уровень логирования"

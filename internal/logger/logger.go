@@ -14,6 +14,10 @@ type responseData struct {
 	size   int
 }
 
+func Log() *zap.Logger {
+	return log
+}
+
 type loggingResponseWriter struct {
 	http.ResponseWriter // встраиваем оригинальный http.ResponseWriter
 	responseData        *responseData
