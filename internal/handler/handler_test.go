@@ -299,8 +299,6 @@ func TestStorageServer_HandlerPostFullJSON(t *testing.T) {
 			result := w.Result()
 			haveShort, _ := io.ReadAll(result.Body)
 			defer result.Body.Close()
-			t.Log(555, result.StatusCode)
-			t.Log(666, result.Body)
 
 			assert.Equal(t, test.want.code, result.StatusCode)
 
