@@ -39,8 +39,8 @@ func TestStorageServer_HandlerPostFull(t *testing.T) {
 
 	haveMethod := http.MethodPost
 	haveBody := "http://ya.ru"
-	haveContentType := contentTypeText
-	wantContentType := contentTypeText
+	haveContentType := model.ContentTypeText
+	wantContentType := model.ContentTypeText
 
 	tests := []struct {
 		name string
@@ -101,7 +101,7 @@ func TestStorageServer_HandlerPostFull(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			body := strings.NewReader(test.have.body)
 			r := httptest.NewRequest(test.have.method, `/`, body)
-			r.Header.Add(headerContentType, test.have.contentType)
+			r.Header.Add(model.HeaderContentType, test.have.contentType)
 			w := httptest.NewRecorder()
 			server.HandlerPostFull(w, r)
 
@@ -230,8 +230,8 @@ func TestStorageServer_HandlerPostFullJSON(t *testing.T) {
 
 	haveMethod := http.MethodPost
 	haveBody := `{ "url": "http://ya.ru" }`
-	haveContentType := contextTypeJSON
-	wantContentType := contextTypeJSON
+	haveContentType := model.ContentTypeJSON
+	wantContentType := model.ContentTypeJSON
 
 	tests := []struct {
 		name string // description of this test case
@@ -292,7 +292,7 @@ func TestStorageServer_HandlerPostFullJSON(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			body := strings.NewReader(test.have.body)
 			r := httptest.NewRequest(test.have.method, `/api/shorten`, body)
-			r.Header.Add(headerContentType, test.have.contentType)
+			r.Header.Add(model.HeaderContentType, test.have.contentType)
 			w := httptest.NewRecorder()
 			server.HandlerPostFullJSON(w, r)
 
@@ -303,7 +303,7 @@ func TestStorageServer_HandlerPostFullJSON(t *testing.T) {
 			assert.Equal(t, test.want.code, result.StatusCode)
 
 			if result.StatusCode == http.StatusCreated {
-				assert.Equal(t, test.want.contentType, result.Header.Get(headerContentType))
+				assert.Equal(t, test.want.contentType, result.Header.Get(model.HeaderContentType))
 
 				var response model.Response
 				err := json.Unmarshal(haveShort, &response)

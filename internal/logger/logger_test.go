@@ -50,12 +50,12 @@ func TestWithLogging(t *testing.T) {
 		want int
 	}{
 		{
-			name: "positiveGetFull",
+			name: "positive",
 			h:    func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusBadRequest) },
 			want: http.StatusBadRequest,
 		},
 		{
-			name: "positivePostFull",
+			name: "negative",
 			h:    func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusCreated) },
 			want: http.StatusCreated,
 		},

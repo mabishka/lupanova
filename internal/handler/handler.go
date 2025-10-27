@@ -15,13 +15,6 @@ import (
 	"github.com/mabishka/lupanova/internal/service"
 )
 
-const (
-	headerContentType = "Content-Type"
-	headerLocation    = "Location"
-	contentTypeText   = "text/plain"
-	contextTypeJSON   = "application/json"
-)
-
 type StorageServer struct {
 	service.Storage
 	u *url.URL
@@ -52,8 +45,8 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	contentType := r.Header.Get(headerContentType)
-	if contentType != contentTypeText {
+	contentType := r.Header.Get(model.HeaderContentType)
+	if contentType != model.ContentTypeText {
 		logger.Log().Debug("error content type")
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -82,7 +75,7 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	w.Header().Set(headerContentType, contentTypeText)
+	w.Header().Set(model.HeaderContentType, model.ContentTypeText)
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(p.format(short)))
 }
@@ -108,7 +101,7 @@ func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set(headerLocation, full)
+	w.Header().Set(model.HeaderLocation, full)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
@@ -122,8 +115,8 @@ func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	contentType := r.Header.Get(headerContentType)
-	if contentType != contextTypeJSON {
+	contentType := r.Header.Get(model.HeaderContentType)
+	if contentType != model.ContentTypeJSON {
 		logger.Log().Debug("error contect type")
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -164,7 +157,7 @@ func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Reque
 
 	}
 
-	w.Header().Set(headerContentType, contextTypeJSON)
+	w.Header().Set(model.HeaderContentType, model.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
 	w.Write(enc)
 }
