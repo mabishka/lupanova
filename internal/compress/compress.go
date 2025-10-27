@@ -86,7 +86,7 @@ func compress(w http.ResponseWriter, r *http.Request) ResponseWriter {
 
 	for _, contentType := range r.Header.Values(model.HeaderAcceptEncoding) {
 		var compressType string
-		var compressLevel int = 1
+		compressLevel := 1
 		for _, value := range strings.Split(contentType, ",") {
 			value = strings.TrimSpace(value)
 			if strings.HasPrefix(value, "q=") {
