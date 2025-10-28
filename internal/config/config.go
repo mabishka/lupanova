@@ -10,6 +10,8 @@ import (
 
 // Флаг -a отвечает за адрес запуска HTTP-сервера (значение может быть таким: localhost:8888).
 // Флаг -b отвечает за базовый адрес результирующего сокращённого URL (значение: адрес сервера перед коротким URL, например, http://localhost:8000/qsd54gFg).
+// Флаг -l отвечает за уровень логирования (значение по умолчанию: "Info")
+// Флаг -f путь до файла, куда сохраняются данные в формате JSON (значение по умолчанию "./storage.json")
 
 const (
 	defaultServerAddress = ":8080"
@@ -22,22 +24,29 @@ const (
 	envBaseAddress     = "BASE_URL"
 	descBaseAddress    = "базовый адрес результирующего сокращённого URL"
 
-	defaultLogLevel = "Debug"
+	defaultLogLevel = "Info"
 	flagLogLevel    = "l"
 	envLogLevel     = "LOG_LEVEL"
 	descLogLevel    = "уровень логирования"
+
+	defaultFileName = "./storage.json"
+	flagFileName    = "f"
+	envFileName     = "FILE_STORAGE_PATH"
+	descFileName    = "файл для хранения сокращенных адресов"
 )
 
 var DefaultConfig = &Config{
 	serverAddress: defaultServerAddress,
 	baseAddress:   defaultBaseAddress,
 	logLevel:      defaultLogLevel,
+	fileName:      defaultFileName,
 }
 
 type Config struct {
 	serverAddress string
 	baseAddress   string
 	logLevel      string
+	fileName      string
 }
 
 func New() *Config {
@@ -45,6 +54,7 @@ func New() *Config {
 	serverAddress := setAddress(envServerAddress, flagServerAddress, defaultServerAddress, descServerAddress)
 	baseAddress := setAddress(envBaseAddress, flagBaseAddress, defaultBaseAddress, descBaseAddress)
 	logLevel := setAddress(envLogLevel, flagLogLevel, defaultLogLevel, descLogLevel)
+	fileName := setAddress(envFileName, flagFileName, defaultFileName, descFileName)
 
 	flag.Parse()
 
@@ -52,6 +62,7 @@ func New() *Config {
 		serverAddress: validateServerAddress(*serverAddress, defaultServerAddress),
 		baseAddress:   validateBaseAddress(*baseAddress, defaultBaseAddress),
 		logLevel:      *logLevel,
+		fileName:      *fileName,
 	}
 }
 
@@ -98,4 +109,8 @@ func (c *Config) GetServerAddress() string {
 
 func (c *Config) GetLogLevel() string {
 	return c.logLevel
+}
+
+func (c *Config) GetFileName() string {
+	return c.fileName
 }
