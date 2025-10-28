@@ -107,11 +107,11 @@ func compress(w http.ResponseWriter, r *http.Request) ResponseWriter {
 					zap.Error(err),
 					zap.String(model.HeaderContentEncoding, compressType))
 
-				return cw
+				continue
 			}
 			w.Header().Set(model.HeaderContentEncoding, compressType)
-
 			cw.writer = gz
+			return cw
 		case compressTypeDeflate:
 			lz, err := zlib.NewWriterLevel(w, compressLevel)
 			if err != nil {
@@ -119,11 +119,11 @@ func compress(w http.ResponseWriter, r *http.Request) ResponseWriter {
 					zap.Error(err),
 					zap.String(model.HeaderContentEncoding, compressType))
 
-				return cw
+				continue
 			}
 			w.Header().Set(model.HeaderContentEncoding, compressType)
 			cw.writer = lz
-		case compressTypeEmpty:
+			return cw
 		}
 	}
 
