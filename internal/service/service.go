@@ -49,12 +49,15 @@ func (p *Server) Load(loader StorageLoader) error {
 	return nil
 }
 
-func (p *Server) store(full, short string) {
+func (p *Server) store(full, short string) error {
 	p.shortList[short] = full
 	p.fullList[full] = short
 	if p.loader != nil {
-		p.loader.Store(full, short)
+		if err := p.loader.Store(full, short); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 func (p *Server) GetShort(full string) (string, error) {
@@ -70,7 +73,9 @@ func (p *Server) GetShort(full string) (string, error) {
 		return "", err
 	}
 
-	p.store(full, short)
+	if err := p.store(full, short); err != nil {
+		return "", err
+	}
 	p.shortList[short] = full
 	return short, nil
 }

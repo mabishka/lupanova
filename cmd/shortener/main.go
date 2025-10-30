@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -13,12 +14,10 @@ import (
 )
 
 func main() {
-	if err := run(); err != nil {
-		panic(err)
-	}
+	run(context.Background())
 }
 
-func run() error {
+func run(ctx context.Context) {
 
 	config := config.New()
 	if err := logger.InitLogger(config.GetLogLevel()); err != nil {
@@ -27,12 +26,19 @@ func run() error {
 
 	server := handler.New(config.GetBaseAddress())
 	loader := fileloader.New(config.GetFileName())
-	server.Load(loader)
+	if err := server.Load(loader); err != nil {
+		panic(err)
+	}
 	router := chi.NewRouter()
 
 	router.Post(`/`, logger.WithLogging(compress.WithCompress(server.HandlerPostFull)))
 	router.Post(`/api/shorten`, logger.WithLogging(compress.WithCompress(server.HandlerPostFullJSON)))
 	router.Get(`/{id}`, logger.WithLogging(compress.WithCompress(server.HandlerGetFull)))
 
-	return http.ListenAndServe(config.GetServerAddress(), router)
+	go func() {
+		if err := http.ListenAndServe(config.GetServerAddress(), router); err != nil {
+			panic(err)
+		}
+	}()
+	<-ctx.Done()
 }

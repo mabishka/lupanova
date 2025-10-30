@@ -20,10 +20,12 @@ func TestWithCompress(t *testing.T) {
 
 	gzipBuffer := new(bytes.Buffer)
 	gzipWriter := gzip.NewWriter(gzipBuffer)
+	defer gzipWriter.Close()
 	gzipWriter.Write([]byte(data))
 
 	deflateBuffer := new(bytes.Buffer)
 	deflateWriter := zlib.NewWriter(deflateBuffer)
+	defer deflateWriter.Close()
 	deflateWriter.Write([]byte(data))
 
 	tests := []struct {

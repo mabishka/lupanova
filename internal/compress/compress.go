@@ -34,7 +34,7 @@ func (w *compressResponseWriter) Write(b []byte) (int, error) {
 	if w.writer != nil {
 		return w.writer.Write(b)
 	}
-	return w.Write(b)
+	return w.ResponseWriter.Write(b)
 }
 
 func (w *compressResponseWriter) Close() {

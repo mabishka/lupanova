@@ -1,14 +1,15 @@
 package main
 
 import (
+	"context"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_run(t *testing.T) {
 
+	ctx, fnCancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer fnCancel()
 	tests := []struct {
 		name    string // description of this test case
 		wantErr bool
@@ -20,17 +21,7 @@ func Test_run(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var err error
-			go func() {
-				err = run()
-			}()
-			time.Sleep(time.Second * 5)
-
-			if test.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
+			run(ctx)
 		})
 	}
 }

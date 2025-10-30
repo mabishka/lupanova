@@ -29,7 +29,8 @@ func TestFileLoader_exist(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			p := New(test.fileName)
-			got := p.exist()
+			got, err := p.exist()
+			assert.NoError(t, err)
 			assert.Equal(t, test.want, got)
 		})
 	}
@@ -94,9 +95,9 @@ func TestFileLoader_Load(t *testing.T) {
 
 func TestFileLoader_Store(t *testing.T) {
 	p := New("file2")
-	_, err := p.Load(); 
+	_, err := p.Load()
 	assert.NoError(t, err)
-	
+
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
@@ -107,8 +108,8 @@ func TestFileLoader_Store(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			short: "short",
-			full: "full",
+			short:   "short",
+			full:    "full",
 			wantErr: false,
 		},
 	}

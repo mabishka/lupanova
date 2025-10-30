@@ -23,7 +23,10 @@ func New(fileName string) *FileLoader {
 
 // return map [short string] full string
 func (p *FileLoader) Load() (map[string]string, error) {
-	p.create()
+
+	if err := p.create(); err != nil {
+		return nil, err
+	}
 
 	p.Lock()
 	defer p.Unlock()
@@ -49,7 +52,9 @@ func (p *FileLoader) Load() (map[string]string, error) {
 
 func (p *FileLoader) Store(full, short string) error {
 
-	p.create()
+	if err := p.create(); err != nil {
+		return err
+	}
 
 	p.Lock()
 	defer p.Unlock()
@@ -91,23 +96,29 @@ func (p *FileLoader) Store(full, short string) error {
 
 func (p *FileLoader) create() error {
 
-	if p.exist() {
+	exist, err := p.exist()
+	if err != nil {
+		return err
+	}
+	if exist {
 		return nil
 	}
 
 	p.Lock()
 	defer p.Unlock()
 
-	os.WriteFile(p.fileName, []byte("[]"), 0644)
+	if err := os.WriteFile(p.fileName, []byte("[]"), 0644); err != nil {
+		return err
+	}
 	p.fileSize = 2
 
 	return nil
 }
 
-func (p *FileLoader) exist() bool {
+func (p *FileLoader) exist() (bool, error) {
 
 	if p.fileSize != 0 {
-		return true
+		return true, nil
 	}
 
 	p.Lock()
@@ -115,9 +126,12 @@ func (p *FileLoader) exist() bool {
 
 	stat, err := os.Stat(p.fileName)
 	if err != nil {
-		return false
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
 	}
 	p.fileSize = stat.Size()
 
-	return p.fileSize != 0
+	return p.fileSize != 0, nil
 }
