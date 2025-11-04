@@ -4,44 +4,82 @@ import (
 	"flag"
 	"net"
 	"net/url"
+	"os"
 	"strings"
 )
 
 // Флаг -a отвечает за адрес запуска HTTP-сервера (значение может быть таким: localhost:8888).
 // Флаг -b отвечает за базовый адрес результирующего сокращённого URL (значение: адрес сервера перед коротким URL, например, http://localhost:8000/qsd54gFg).
+// Флаг -l отвечает за уровень логирования (значение по умолчанию: "Info")
+// Флаг -f путь до файла, куда сохраняются данные в формате JSON (значение по умолчанию "./storage.json")
 
 const (
-	defaultServerAddress = ""
-	defaultServerPort    = "8080"
-	defaultBaseAddress   = "http://localhost:8080"
+	defaultServerAddress = ":8080"
+	flagServerAddress    = "a"
+	envServerAddress     = "SERVER_ADDRESS"
+	descServerAddress    = "адрес запуска HTTP-сервера"
+
+	defaultBaseAddress = "http://localhost:8080"
+	flagBaseAddress    = "b"
+	envBaseAddress     = "BASE_URL"
+	descBaseAddress    = "базовый адрес результирующего сокращённого URL"
+
+	defaultLogLevel = "Info"
+	flagLogLevel    = "l"
+	envLogLevel     = "LOG_LEVEL"
+	descLogLevel    = "уровень логирования"
+
+	defaultFileName = "./storage.json"
+	flagFileName    = "f"
+	envFileName     = "FILE_STORAGE_PATH"
+	descFileName    = "файл для хранения сокращенных адресов"
 )
+
+var DefaultConfig = &Config{
+	serverAddress: defaultServerAddress,
+	baseAddress:   defaultBaseAddress,
+	logLevel:      defaultLogLevel,
+	fileName:      defaultFileName,
+}
 
 type Config struct {
 	serverAddress string
 	baseAddress   string
+	logLevel      string
+	fileName      string
 }
 
 func New() *Config {
-	res := &Config{}
-	flag.StringVar(&res.serverAddress, "a", ":8080", "адрес запуска HTTP-сервера")
-	flag.StringVar(&res.baseAddress, "b", defaultBaseAddress, "базовый адрес результирующего сокращённого URL")
+
+	serverAddress := setAddress(envServerAddress, flagServerAddress, defaultServerAddress, descServerAddress)
+	baseAddress := setAddress(envBaseAddress, flagBaseAddress, defaultBaseAddress, descBaseAddress)
+	logLevel := setAddress(envLogLevel, flagLogLevel, defaultLogLevel, descLogLevel)
+	fileName := setAddress(envFileName, flagFileName, defaultFileName, descFileName)
 
 	flag.Parse()
 
-	res.serverAddress = validateServerAddress(res.serverAddress, defaultServerAddress, defaultServerPort)
-	res.baseAddress = validateBaseAddress(res.baseAddress, defaultBaseAddress)
-
-	return res
+	return &Config{
+		serverAddress: validateServerAddress(*serverAddress, defaultServerAddress),
+		baseAddress:   validateBaseAddress(*baseAddress, defaultBaseAddress),
+		logLevel:      *logLevel,
+		fileName:      *fileName,
+	}
 }
 
-func validateServerAddress(address, defaultAddress, defaultPort string) string {
+func setAddress(envAddress, flagName, defaultAddress, description string) *string {
+	flagaddress := flag.String(flagName, defaultAddress, description)
+	if address, ok := os.LookupEnv(envAddress); ok && address != "" {
+		return &address
+	}
+	return flagaddress
+}
+
+func validateServerAddress(address, defaultAddress string) string {
 	addrList := strings.Split(address, ":")
-	if len(addrList) < 1 || len(addrList) > 2 {
-		return net.JoinHostPort(defaultAddress, defaultPort)
+	if len(addrList) < 1 || len(addrList) > 2 || len(addrList) == 1 && addrList[0] == "" {
+		return defaultAddress
 	}
-	if addrList[0] == "" {
-		addrList[0] = defaultAddress
-	}
+
 	if len(addrList) < 2 || addrList[1] == "" {
 		return addrList[0]
 	}
@@ -53,6 +91,7 @@ func validateBaseAddress(address, defaultAddress string) string {
 	if err != nil {
 		return defaultAddress
 	}
+
 	if u.Scheme == "" || u.Host == "" {
 		return defaultAddress
 	}
@@ -66,4 +105,12 @@ func (c *Config) GetBaseAddress() string {
 
 func (c *Config) GetServerAddress() string {
 	return c.serverAddress
+}
+
+func (c *Config) GetLogLevel() string {
+	return c.logLevel
+}
+
+func (c *Config) GetFileName() string {
+	return c.fileName
 }

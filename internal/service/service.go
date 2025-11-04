@@ -2,37 +2,70 @@ package service
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"sync"
 
 	"github.com/mabishka/lupanova/pkg/rand"
 )
 
+type StorageLoader interface {
+	Load() (map[string]string, error) // return map [short string] full string
+	Store(string, string) error       // store (full, short)
+}
+
 type Storage interface {
 	GetShort(full string) (string, error)
 	GetFull(short string) (string, error)
+	Load(loader StorageLoader) error
 }
 
 type Server struct {
 	*sync.RWMutex
-	list map[string]string // map [short string] full string
-	u    url.URL
+	shortList map[string]string // map [short string] full string
+	fullList  map[string]string // map [full string] short string
+	loader    StorageLoader
 }
 
 const shortLen = 8
 
 func New() *Server {
-	return &Server{RWMutex: &sync.RWMutex{}, list: make(map[string]string)}
+	return &Server{
+		RWMutex:   &sync.RWMutex{},
+		shortList: make(map[string]string),
+		fullList:  make(map[string]string),
+	}
+}
+func (p *Server) Load(loader StorageLoader) error {
+	p.loader = loader
+	list, err := loader.Load()
+	if err != nil {
+		return err
+	}
+	p.shortList = list
+
+	for k, v := range p.shortList {
+		p.fullList[v] = k
+	}
+	return nil
+}
+
+func (p *Server) store(full, short string) error {
+	p.shortList[short] = full
+	p.fullList[full] = short
+	if p.loader != nil {
+		if err := p.loader.Store(full, short); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (p *Server) GetShort(full string) (string, error) {
 	p.Lock()
 	defer p.Unlock()
-	for k, v := range p.list {
-		if v == full {
-			return k, nil
-		}
+
+	if short, ok := p.fullList[full]; ok {
+		return short, nil
 	}
 
 	short, err := rand.CreateShort(shortLen)
@@ -40,7 +73,10 @@ func (p *Server) GetShort(full string) (string, error) {
 		return "", err
 	}
 
-	p.list[short] = full
+	if err := p.store(full, short); err != nil {
+		return "", err
+	}
+	p.shortList[short] = full
 	return short, nil
 }
 
@@ -49,7 +85,7 @@ func (p *Server) GetFull(short string) (string, error) {
 	defer p.RUnlock()
 
 	short = strings.Trim(short, "/")
-	if full, ok := p.list[short]; ok {
+	if full, ok := p.shortList[short]; ok {
 		return full, nil
 	}
 

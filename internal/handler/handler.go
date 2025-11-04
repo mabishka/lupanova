@@ -1,12 +1,17 @@
 package handler
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
+
+	"github.com/mabishka/lupanova/internal/logger"
+	"github.com/mabishka/lupanova/internal/model"
 	"github.com/mabishka/lupanova/internal/service"
 )
 
@@ -35,12 +40,14 @@ func (p *StorageServer) format(path string) string {
 func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
+		logger.Log().Debug("error method")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	contentType := r.Header.Get("Content-Type")
-	if contentType != "text/plain" {
+	contentType := r.Header.Get(model.HeaderContentType)
+	if contentType != model.ContentTypeText {
+		logger.Log().Debug("error content type")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -48,6 +55,7 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 	// Читаем тело запроса
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
+		logger.Log().Debug("error getting request", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -55,17 +63,19 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 
 	full := strings.TrimSpace(string(body))
 	if _, err := url.ParseRequestURI(full); err != nil {
+		logger.Log().Debug("error parsing request", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	short, err := p.GetShort(full)
 	if err != nil {
+		logger.Log().Debug("error getting short", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set(model.HeaderContentType, model.ContentTypeText)
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(p.format(short)))
 }
@@ -77,6 +87,7 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodGet {
+		logger.Log().Debug("error method")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -85,10 +96,68 @@ func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
 
 	full, err := p.GetFull(id)
 	if err != nil {
+		logger.Log().Debug("error getting full", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	w.Header().Set("Location", full)
+	w.Header().Set(model.HeaderLocation, full)
 	w.WriteHeader(http.StatusTemporaryRedirect)
+}
+
+// Эндпоинт с методом POST и путём /.
+// Сервер принимает в теле запроса JSON URL как application/json
+// и возвращает ответ с кодом 201 и сокращённым JSON URL как application/json.
+func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		logger.Log().Debug("error method")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	contentType := r.Header.Get(model.HeaderContentType)
+	if contentType != model.ContentTypeJSON {
+		logger.Log().Debug("error contect type")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Читаем тело запроса
+	var request model.Request
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&request); err != nil {
+		logger.Log().Debug("error decoding request", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	full := strings.TrimSpace(string(request.Full))
+	if _, err := url.ParseRequestURI(full); err != nil {
+		logger.Log().Debug("error parsing request", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	short, err := p.GetShort(full)
+	if err != nil {
+		logger.Log().Debug("error getting short", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	response := model.Response{
+		Short: p.format(short),
+	}
+
+	enc, err := json.Marshal(response)
+	if err != nil {
+		logger.Log().Debug("error encoding response", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+
+	}
+
+	w.Header().Set(model.HeaderContentType, model.ContentTypeJSON)
+	w.WriteHeader(http.StatusCreated)
+	w.Write(enc)
 }
