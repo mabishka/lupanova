@@ -35,6 +35,7 @@ func New() *Server {
 		fullList:  make(map[string]string),
 	}
 }
+
 func (p *Server) Load(loader StorageLoader) error {
 	p.loader = loader
 	list, err := loader.Load()
