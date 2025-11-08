@@ -30,8 +30,10 @@ func run(ctx context.Context) {
 	server := handler.New(config.GetBaseAddress())
 
 	var loader model.StorageLoader
+	var conn model.ConnLoader
 	if config.GetConnAddress() != "" {
 		loader = connloader.New(config.GetConnAddress())
+		conn, _ = loader.(model.ConnLoader)
 		if err := server.Load(context.Background(), loader); err != nil {
 			logger.Log().Error("conn not loaded", zap.Error(err))
 			loader = nil
@@ -56,7 +58,6 @@ func run(ctx context.Context) {
 		logger.Log().Info("memory storage usage")
 	}
 
-	conn, _ := loader.(model.ConnLoader)
 	connServer := handler.NewConn(conn)
 
 	router := chi.NewRouter()
