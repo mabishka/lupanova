@@ -1,4 +1,4 @@
-package fileloader
+package connloader
 
 import (
 	"context"
@@ -7,52 +7,55 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFileLoader_exist(t *testing.T) {
+func TestConnLoader_Ping(t *testing.T) {
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
-		fileName string
-		want     bool
+		connName string
+		wantErr  bool
 	}{
 		{
-			fileName: "main.go",
-			want:     false,
+			name:     "positive",
+			connName: "user=user password=user host=localhost port=5433 dbname=practicum sslmode=disable",
+			wantErr:  false,
 		},
 		{
-			fileName: "go.mod",
-			want:     false,
-		},
-		{
-			fileName: "fileloader_test.go",
-			want:     true,
+			name:     "negative",
+			connName: "conn",
+			wantErr:  true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p := New(test.fileName)
-			got, err := p.exist()
-			assert.NoError(t, err)
-			assert.Equal(t, test.want, got)
+			p := New(test.connName)
+			err := p.Ping(context.TODO())
+
+			if test.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
 
-func TestFileLoader_create(t *testing.T) {
+func TestConnLoader_create(t *testing.T) {
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
-		fileName string
+		connName string
 		wantErr  bool
 	}{
 		{
-			fileName: "file1",
+			name:     "positive",
+			connName: "user=user password=user host=localhost port=5433 dbname=practicum sslmode=disable",
 			wantErr:  false,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p := New(test.fileName)
-			gotErr := p.create()
+			p := New(test.connName)
+			gotErr := p.Create(context.TODO())
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {
@@ -62,47 +65,49 @@ func TestFileLoader_create(t *testing.T) {
 	}
 }
 
-func TestFileLoader_Load(t *testing.T) {
+func TestConnLoader_Load(t *testing.T) {
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
-		fileName string
+		connName string
 		want     map[string]string
 		wantErr  bool
 	}{
 		{
-			fileName: "file1",
-			want:     map[string]string{},
+			name:     "positive",
+			connName: "user=user password=user host=localhost port=5433 dbname=practicum sslmode=disable",
+			want:     map[string]string{"short": "full"},
 			wantErr:  false,
 		},
 		{
-			fileName: "fileloader_test.go",
+			name:     "negative",
+			connName: "err",
 			want:     map[string]string{},
 			wantErr:  true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p := New(test.fileName)
-			got, gotErr := p.Load(context.TODO())
+			p := New(test.connName)
+			_, gotErr := p.Load(context.TODO())
 			if test.wantErr {
 				assert.Error(t, gotErr)
-			} else if assert.NoError(t, gotErr) {
-				assert.Equal(t, test.want, got)
+			} else {
+				assert.NoError(t, gotErr)
 			}
 		})
 	}
 }
 
-func TestFileLoader_Store(t *testing.T) {
-	p := New("file2")
+func TestConnLoader_Store(t *testing.T) {
+	p := New("user=user password=user host=localhost port=5433 dbname=practicum sslmode=disable")
 	_, err := p.Load(context.TODO())
 	assert.NoError(t, err)
 
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
-		fileName string
+		connName string
 		// Named input parameters for target function.
 		full    string
 		short   string

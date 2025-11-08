@@ -17,7 +17,7 @@ import (
 )
 
 type StorageServer struct {
-	service.Storage
+	model.Storage
 	u *url.URL
 }
 
@@ -28,6 +28,10 @@ func New(address string) *StorageServer {
 	}
 
 	return &StorageServer{Storage: service.New(), u: u}
+}
+
+func (p *StorageServer) SetLoader(loader model.Storage) {
+	p.Storage = loader
 }
 
 func (p *StorageServer) format(path string) string {
@@ -69,7 +73,7 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	short, err := p.GetShort(full)
+	short, err := p.GetShort(context.TODO(), full)
 	if err != nil {
 		logger.Log().Debug("error getting short", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
@@ -95,7 +99,7 @@ func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
 
 	id := chi.URLParam(r, "id")
 
-	full, err := p.GetFull(id)
+	full, err := p.GetFull(context.TODO(), id)
 	if err != nil {
 		logger.Log().Debug("error getting full", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
@@ -139,7 +143,7 @@ func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	short, err := p.GetShort(full)
+	short, err := p.GetShort(context.TODO(), full)
 	if err != nil {
 		logger.Log().Debug("error getting short", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
@@ -163,15 +167,11 @@ func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Reque
 	w.Write(enc)
 }
 
-type ConnLoader interface {
-	Load(context.Context) error
-	Ping(context.Context) error
-}
 type ConnServer struct {
-	ConnLoader
+	model.ConnLoader
 }
 
-func NewConn(x ConnLoader) *ConnServer {
+func NewConn(x model.ConnLoader) *ConnServer {
 	return &ConnServer{ConnLoader: x}
 }
 

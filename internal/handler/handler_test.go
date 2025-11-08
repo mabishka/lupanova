@@ -143,7 +143,7 @@ func TestStorageServer_HandlerGetFull(t *testing.T) {
 
 	haveMethod := http.MethodGet
 	full := "http://yandex.ru"
-	short, err := server.GetShort(full)
+	short, err := server.GetShort(context.TODO(), full)
 	if err != nil {
 		t.Error(err)
 		return
@@ -330,7 +330,7 @@ func TestStorageServer_HandlerGetPing(t *testing.T) {
 	connAddr := "user=postgres dbname=postgres sslmode=verify-full"
 	loader := connloader.New(connAddr)
 	server := NewConn(loader)
-	server.Load(context.TODO())
+	server.Create(context.TODO())
 
 	router := chi.NewRouter()
 	router.Post(`/ping`, server.HandlerGetPing)

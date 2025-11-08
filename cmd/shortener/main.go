@@ -5,11 +5,13 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 
 	"github.com/mabishka/lupanova/internal/compress"
 	"github.com/mabishka/lupanova/internal/config"
 	"github.com/mabishka/lupanova/internal/handler"
 	"github.com/mabishka/lupanova/internal/logger"
+	"github.com/mabishka/lupanova/internal/model"
 	"github.com/mabishka/lupanova/internal/repository/connloader"
 	"github.com/mabishka/lupanova/internal/repository/fileloader"
 )
@@ -27,17 +29,34 @@ func run(ctx context.Context) {
 
 	server := handler.New(config.GetBaseAddress())
 
-	loader := fileloader.New(config.GetFileName())
-	if err := server.Load(loader); err != nil {
-		logger.Log().Info("memory storage usage")
-	} else {
-		logger.Log().Info("file storage usage")
+	var loader model.StorageLoader
+	if config.GetConnAddress() != "" {
+		loader = connloader.New(config.GetConnAddress())
+		if err := server.Load(context.Background(), loader); err != nil {
+			logger.Log().Error("conn not loaded", zap.Error(err))
+			loader = nil
+		} else {
+			logger.Log().Info("conn storage usage")
+		}
+
 	}
 
-	conn := connloader.New(config.GetConnAddress())
-	if err := conn.Load(context.TODO()); err == nil {
-		logger.Log().Error("conn not loaded")
+	if loader == nil && config.GetFileName() != "" {
+		loader = fileloader.New(config.GetFileName())
+
+		if err := server.Load(context.Background(), loader); err != nil {
+			logger.Log().Error("file not loaded", zap.Error(err))
+			loader = nil
+		} else {
+			logger.Log().Info("file storage usage")
+		}
 	}
+
+	if loader == nil {
+		logger.Log().Info("memory storage usage")
+	}
+
+	conn, _ := loader.(model.ConnLoader)
 	connServer := handler.NewConn(conn)
 
 	router := chi.NewRouter()

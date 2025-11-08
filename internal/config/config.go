@@ -34,7 +34,7 @@ const (
 	envFileName     = "FILE_STORAGE_PATH"
 	descFileName    = "файл для хранения сокращенных адресов"
 
-	defaultConnAddress = "user=postgres dbname=postgres sslmode=verify-full"
+	defaultConnAddress = ""
 	flagConnAddress    = "d"
 	envConnAddress     = "DATABASE_DSN "
 	descConnAddress    = "строка с адресом подключения к БД"
