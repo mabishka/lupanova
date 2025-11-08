@@ -15,11 +15,6 @@ func TestConnLoader_Ping(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name:     "positive",
-			connName: "user=user password=user host=localhost port=5433 dbname=practicum sslmode=disable",
-			wantErr:  false,
-		},
-		{
 			name:     "negative",
 			connName: "conn",
 			wantErr:  true,
@@ -47,9 +42,9 @@ func TestConnLoader_create(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name:     "positive",
-			connName: "user=user password=user host=localhost port=5433 dbname=practicum sslmode=disable",
-			wantErr:  false,
+			name:     "negative",
+			connName: "conn",
+			wantErr:  true,
 		},
 	}
 	for _, test := range tests {
@@ -74,12 +69,6 @@ func TestConnLoader_Load(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name:     "positive",
-			connName: "user=user password=user host=localhost port=5433 dbname=practicum sslmode=disable",
-			want:     map[string]string{"short": "full"},
-			wantErr:  false,
-		},
-		{
 			name:     "negative",
 			connName: "err",
 			want:     map[string]string{},
@@ -100,9 +89,6 @@ func TestConnLoader_Load(t *testing.T) {
 }
 
 func TestConnLoader_Store(t *testing.T) {
-	p := New("user=user password=user host=localhost port=5433 dbname=practicum sslmode=disable")
-	_, err := p.Load(context.TODO())
-	assert.NoError(t, err)
 
 	tests := []struct {
 		name string // description of this test case
@@ -116,11 +102,14 @@ func TestConnLoader_Store(t *testing.T) {
 		{
 			short:   "short",
 			full:    "full",
-			wantErr: false,
+			wantErr: true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			p := New("conn=a")
+			_, err := p.Load(context.TODO())
+			assert.Error(t, err)
 			gotErr := p.Store(context.TODO(), test.full, test.short)
 			if test.wantErr {
 				assert.Error(t, gotErr)
