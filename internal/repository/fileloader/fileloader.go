@@ -1,21 +1,20 @@
 package fileloader
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
+	"io"
 	"os"
 	"sync"
+
+	"github.com/mabishka/lupanova/internal/model"
 )
 
 type FileLoader struct {
 	*sync.Mutex
 	fileName string
 	fileSize int64
-}
-
-type fileData struct {
-	Short string `json:"short"`
-	Full  string `json:"full"`
 }
 
 func New(fileName string) *FileLoader {
@@ -37,7 +36,7 @@ func (p *FileLoader) Load(ctx context.Context) (map[string]string, error) {
 		return nil, err
 	}
 
-	var data []fileData
+	var data []model.StoreItem
 
 	if err := json.Unmarshal(content, &data); err != nil {
 		return nil, err
@@ -60,18 +59,29 @@ func (p *FileLoader) Store(ctx context.Context, full, short string) error {
 	p.Lock()
 	defer p.Unlock()
 
-	if err := os.Truncate(p.fileName, int64(p.fileSize)-1); err != nil {
-		return err
-	}
-	p.fileSize--
-
-	file, err := os.OpenFile(p.fileName, os.O_WRONLY|os.O_APPEND, 0644)
+	file, err := os.OpenFile(p.fileName, os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	fileData := fileData{
+	filesize := int64(p.fileSize) - 1
+	if err := file.Truncate(filesize); err != nil {
+		return err
+	}
+	p.fileSize = filesize
+
+	file.Seek(0, io.SeekEnd)
+
+	defer func() {
+		n, err := file.Write([]byte("]"))
+		if err != nil {
+			return
+		}
+		p.fileSize += int64(n)
+	}()
+
+	fileData := model.StoreItem{
 		Short: short,
 		Full:  full,
 	}
@@ -91,6 +101,70 @@ func (p *FileLoader) Store(ctx context.Context, full, short string) error {
 		return err
 	}
 	p.fileSize += int64(n)
+
+	return nil
+}
+
+func (p *FileLoader) StoreList(ctx context.Context, list []model.StoreItem) error {
+
+	if err := p.create(); err != nil {
+		return err
+	}
+
+	p.Lock()
+	defer p.Unlock()
+
+	file, err := os.OpenFile(p.fileName, os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	filesize := int64(p.fileSize) - 1
+	if err := file.Truncate(filesize); err != nil {
+		return err
+	}
+	p.fileSize = filesize
+
+	file.Seek(0, io.SeekEnd)
+
+	defer func() {
+		n, err := file.Write([]byte("]"))
+		if err != nil {
+			return
+		}
+		p.fileSize += int64(n)
+	}()
+
+	buffer := bufio.NewWriter(file)
+	var size int
+
+	for _, v := range list {
+
+		sendData, err := json.Marshal(&v)
+		if err != nil {
+			return err
+		}
+
+		if p.fileSize > 2 {
+			n, err := buffer.Write([]byte(",\n"))
+			if err != nil {
+				return err
+			}
+			size += n
+		}
+
+		n, err := buffer.Write(sendData)
+		if err != nil {
+			return err
+		}
+		size += n
+	}
+
+	if err := buffer.Flush(); err != nil {
+		return err
+	}
+	p.fileSize += int64(size)
 
 	return nil
 }

@@ -35,7 +35,7 @@ func run(ctx context.Context) {
 		loader = connloader.New(config.GetConnAddress())
 		conn, _ = loader.(model.ConnLoader)
 		if err := server.Load(context.Background(), loader); err != nil {
-			logger.Log().Error("conn not loaded", zap.Error(err))
+			logger.Log().Info("conn not loaded", zap.Error(err))
 			loader = nil
 		} else {
 			logger.Log().Info("conn storage usage")
@@ -62,10 +62,12 @@ func run(ctx context.Context) {
 
 	router := chi.NewRouter()
 
-	router.Post(`/`, logger.WithLogging(compress.WithCompress(server.HandlerPostFull)))
-	router.Post(`/api/shorten`, logger.WithLogging(compress.WithCompress(server.HandlerPostFullJSON)))
 	router.Get(`/{id}`, logger.WithLogging(compress.WithCompress(server.HandlerGetFull)))
 	router.Get(`/ping`, logger.WithLogging(compress.WithCompress(connServer.HandlerGetPing)))
+	router.Post(`/api/shorten/batch`, logger.WithLogging(compress.WithCompress(server.HandlerPostBatch)))
+	router.Post(`/api/shorten`, logger.WithLogging(compress.WithCompress(server.HandlerPostFullJSON)))
+	router.Post(`/`, logger.WithLogging(compress.WithCompress(server.HandlerPostFull)))
+	router.Get(`/`, (Empty))
 
 	go func() {
 		if err := http.ListenAndServe(config.GetServerAddress(), router); err != nil {
@@ -73,4 +75,9 @@ func run(ctx context.Context) {
 		}
 	}()
 	<-ctx.Done()
+}
+
+func Empty(w http.ResponseWriter, r *http.Request) {
+	logger.Log().Error("error method")
+	w.WriteHeader(http.StatusBadRequest)
 }

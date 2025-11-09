@@ -3,9 +3,9 @@ package connloader
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	_ "github.com/lib/pq"
+	"github.com/mabishka/lupanova/internal/model"
 )
 
 type ConnLoader struct {
@@ -75,7 +75,6 @@ func (p *ConnLoader) Load(ctx context.Context) (map[string]string, error) {
 		if full != nil && short != nil {
 			list[*short] = *full
 		}
-		fmt.Println(full, short)
 	}
 
 	if err = rows.Err(); err != nil {
@@ -93,4 +92,27 @@ func (p *ConnLoader) Store(ctx context.Context, full, short string) error {
 
 	_, err := p.conn.ExecContext(ctx, "insert into t_data(s_full, s_short) values($1, $2)", full, short)
 	return err
+}
+
+func (p *ConnLoader) StoreList(ctx context.Context, list []model.StoreItem) error {
+
+	if err := p.Ping(ctx); err != nil {
+		return err
+	}
+
+	tx, err := p.conn.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.PrepareContext(ctx, "insert into t_data(s_full, s_short) values($1, $2)")
+	if err != nil {
+		return err
+	}
+
+	for _, v := range list {
+		stmt.ExecContext(ctx, v.Full, v.Short)
+	}
+	return tx.Commit()
 }

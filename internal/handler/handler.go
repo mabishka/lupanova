@@ -44,15 +44,16 @@ func (p *StorageServer) format(path string) string {
 // и возвращает ответ с кодом 201 и сокращённым URL как text/plain.
 func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) {
 
+	logger.Log().Info("HandlerPostFull")
 	if r.Method != http.MethodPost {
-		logger.Log().Debug("error method")
+		logger.Log().Error("error method")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	contentType := r.Header.Get(model.HeaderContentType)
 	if contentType != model.ContentTypeText {
-		logger.Log().Debug("error content type")
+		logger.Log().Error("error content type")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -60,7 +61,7 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 	// Читаем тело запроса
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		logger.Log().Debug("error getting request", zap.Error(err))
+		logger.Log().Error("error getting request", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -68,14 +69,14 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 
 	full := strings.TrimSpace(string(body))
 	if _, err := url.ParseRequestURI(full); err != nil {
-		logger.Log().Debug("error parsing request", zap.Error(err))
+		logger.Log().Error("error parsing request", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	short, err := p.GetShort(context.TODO(), full)
 	if err != nil {
-		logger.Log().Debug("error getting short", zap.Error(err))
+		logger.Log().Error("error getting short", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -91,8 +92,9 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 // и оригинальным URL в HTTP-заголовке Location.
 func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
 
+	logger.Log().Info("HandlerGetFull")
 	if r.Method != http.MethodGet {
-		logger.Log().Debug("error method")
+		logger.Log().Error("error method")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -101,7 +103,7 @@ func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
 
 	full, err := p.GetFull(context.TODO(), id)
 	if err != nil {
-		logger.Log().Debug("error getting full", zap.Error(err))
+		logger.Log().Error("error getting full", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -114,15 +116,18 @@ func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
 // Сервер принимает в теле запроса JSON URL как application/json
 // и возвращает ответ с кодом 201 и сокращённым JSON URL как application/json.
 func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Request) {
+
+	logger.Log().Info("HandlerPostFullJSON")
+
 	if r.Method != http.MethodPost {
-		logger.Log().Debug("error method")
+		logger.Log().Error("error method")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	contentType := r.Header.Get(model.HeaderContentType)
 	if contentType != model.ContentTypeJSON {
-		logger.Log().Debug("error contect type")
+		logger.Log().Error("error contect type")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -131,21 +136,21 @@ func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Reque
 	var request model.Request
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&request); err != nil {
-		logger.Log().Debug("error decoding request", zap.Error(err))
+		logger.Log().Error("error decoding request", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	full := strings.TrimSpace(string(request.Full))
 	if _, err := url.ParseRequestURI(full); err != nil {
-		logger.Log().Debug("error parsing request", zap.Error(err))
+		logger.Log().Error("error parsing request", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	short, err := p.GetShort(context.TODO(), full)
 	if err != nil {
-		logger.Log().Debug("error getting short", zap.Error(err))
+		logger.Log().Error("error getting short", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -156,7 +161,7 @@ func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Reque
 
 	enc, err := json.Marshal(response)
 	if err != nil {
-		logger.Log().Debug("error encoding response", zap.Error(err))
+		logger.Log().Error("error encoding response", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 
@@ -177,18 +182,67 @@ func NewConn(x model.ConnLoader) *ConnServer {
 
 func (p *ConnServer) HandlerGetPing(w http.ResponseWriter, r *http.Request) {
 
+	logger.Log().Info("HandlerGetPing")
+
 	if r.Method != http.MethodGet {
-		logger.Log().Debug("error method")
+		logger.Log().Error("error method")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if err := p.Ping(context.TODO()); err != nil {
-		logger.Log().Debug("error ping", zap.Error(err))
+		logger.Log().Error("error ping", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set(model.HeaderContentType, model.ContentTypeJSON)
 	w.WriteHeader(http.StatusOK)
+}
+
+// Эндпоинт /api/shorten/batch, принимающий в теле запроса множество URL для сокращения в формате json
+func (p *StorageServer) HandlerPostBatch(w http.ResponseWriter, r *http.Request) {
+
+	logger.Log().Info("HandlerPostBatch")
+
+	if r.Method != http.MethodPost {
+		logger.Log().Error("error method")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	contentType := r.Header.Get(model.HeaderContentType)
+	if contentType != model.ContentTypeJSON {
+		logger.Log().Error("error contect type")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Читаем тело запроса
+	var request []model.FullItem
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&request); err != nil {
+		logger.Log().Error("error decoding request", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	response, err := p.GetShortList(context.TODO(), request)
+	if err != nil {
+		logger.Log().Error("error getting short", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	enc, err := json.Marshal(response)
+	if err != nil {
+		logger.Log().Error("error encoding response", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+
+	}
+
+	w.Header().Set(model.HeaderContentType, model.ContentTypeJSON)
+	w.WriteHeader(http.StatusCreated)
+	w.Write(enc)
 }

@@ -4,8 +4,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/mabishka/lupanova/internal/model"
 	"github.com/stretchr/testify/assert"
 )
+
+const filestore = "../../../../filestore.json"
+const filestorelist = "../../../../filestore_list.json"
+const filecreate = "../../../../file_create.json"
 
 func TestFileLoader_exist(t *testing.T) {
 	tests := []struct {
@@ -45,7 +50,7 @@ func TestFileLoader_create(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			fileName: "file1",
+			fileName: filecreate,
 			wantErr:  false,
 		},
 	}
@@ -71,7 +76,7 @@ func TestFileLoader_Load(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			fileName: "file1",
+			fileName: filestorelist,
 			want:     map[string]string{},
 			wantErr:  false,
 		},
@@ -95,7 +100,7 @@ func TestFileLoader_Load(t *testing.T) {
 }
 
 func TestFileLoader_Store(t *testing.T) {
-	p := New("file2")
+	p := New(filestore)
 	_, err := p.Load(context.TODO())
 	assert.NoError(t, err)
 
@@ -117,6 +122,35 @@ func TestFileLoader_Store(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			gotErr := p.Store(context.TODO(), test.full, test.short)
+			if test.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.NoError(t, gotErr)
+			}
+		})
+	}
+}
+
+func TestFileLoader_StoreList(t *testing.T) {
+	p := New(filestorelist)
+	_, err := p.Load(context.TODO())
+	assert.NoError(t, err)
+
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for receiver constructor.
+		// Named input parameters for target function.
+		store   []model.StoreItem
+		wantErr bool
+	}{
+		{
+			store:   []model.StoreItem{{Full: "full", Short: "short"}},
+			wantErr: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			gotErr := p.StoreList(context.TODO(), test.store)
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {

@@ -54,7 +54,7 @@ func decompress(r *http.Request) *http.Request {
 	case compressTypeGzip:
 		gz, err := gzip.NewReader(r.Body)
 		if err != nil {
-			logger.Log().Debug("decompress error",
+			logger.Log().Error("decompress error",
 				zap.Error(err),
 				zap.String(model.HeaderContentEncoding, decompressType))
 			return r
@@ -63,7 +63,7 @@ func decompress(r *http.Request) *http.Request {
 	case compressTypeDeflate:
 		lz, err := zlib.NewReader(r.Body)
 		if err != nil {
-			logger.Log().Debug("decompress error",
+			logger.Log().Error("decompress error",
 				zap.Error(err),
 				zap.String(model.HeaderContentEncoding, decompressType))
 			return r
@@ -71,7 +71,7 @@ func decompress(r *http.Request) *http.Request {
 		r.Body = lz
 	case compressTypeEmpty:
 	default:
-		logger.Log().Debug("decompress error",
+		logger.Log().Error("decompress error",
 			zap.Error(errors.New("unsupport decompress type")),
 			zap.String(model.HeaderContentEncoding, decompressType))
 	}
@@ -103,7 +103,7 @@ func compress(w http.ResponseWriter, r *http.Request) ResponseWriter {
 
 			gz, err := gzip.NewWriterLevel(w, compressLevel)
 			if err != nil {
-				logger.Log().Debug("compress error",
+				logger.Log().Error("compress error",
 					zap.Error(err),
 					zap.String(model.HeaderContentEncoding, compressType))
 
@@ -115,7 +115,7 @@ func compress(w http.ResponseWriter, r *http.Request) ResponseWriter {
 		case compressTypeDeflate:
 			lz, err := zlib.NewWriterLevel(w, compressLevel)
 			if err != nil {
-				logger.Log().Debug("compress error",
+				logger.Log().Error("compress error",
 					zap.Error(err),
 					zap.String(model.HeaderContentEncoding, compressType))
 
@@ -131,7 +131,6 @@ func compress(w http.ResponseWriter, r *http.Request) ResponseWriter {
 }
 
 func WithCompress(h http.HandlerFunc) http.HandlerFunc {
-
 	compressFn := func(w http.ResponseWriter, r *http.Request) {
 
 		cr := decompress(r)
