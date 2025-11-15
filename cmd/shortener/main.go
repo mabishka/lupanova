@@ -62,22 +62,20 @@ func run(ctx context.Context) {
 
 	router := chi.NewRouter()
 
-	router.Get(`/{id}`, logger.WithLogging(compress.WithCompress(server.HandlerGetFull)))
-	router.Get(`/ping`, logger.WithLogging(compress.WithCompress(connServer.HandlerGetPing)))
-	router.Post(`/api/shorten/batch`, logger.WithLogging(compress.WithCompress(server.HandlerPostBatch)))
-	router.Post(`/api/shorten`, logger.WithLogging(compress.WithCompress(server.HandlerPostFullJSON)))
-	router.Post(`/`, logger.WithLogging(compress.WithCompress(server.HandlerPostFull)))
-	router.Get(`/`, (Empty))
+	router.Use(logger.WithLogging)
+	router.Use(compress.WithCompress)
+
+	router.Post("/", server.HandlerPostFull)
+	router.Get("/{id}", server.HandlerGetFull)
+	router.Post("/api/shorten", server.HandlerPostFullJSON)
+	router.Get("/ping", connServer.HandlerGetPing)
+	router.Post("/api/shorten/batch", server.HandlerPostBatch)
 
 	go func() {
 		if err := http.ListenAndServe(config.GetServerAddress(), router); err != nil {
 			panic(err)
 		}
 	}()
-	<-ctx.Done()
-}
 
-func Empty(w http.ResponseWriter, r *http.Request) {
-	logger.Log().Error("error method")
-	w.WriteHeader(http.StatusBadRequest)
+	<-ctx.Done()
 }

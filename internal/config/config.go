@@ -13,6 +13,8 @@ import (
 // Флаг -l отвечает за уровень логирования (значение по умолчанию: "Info")
 // Флаг -f путь до файла, куда сохраняются данные в формате JSON (значение по умолчанию "./storage.json")
 
+const ShortLen = 8
+
 const (
 	defaultServerAddress = ":8080"
 	flagServerAddress    = "a"

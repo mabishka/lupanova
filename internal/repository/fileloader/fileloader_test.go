@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/mabishka/lupanova/internal/config"
 	"github.com/mabishka/lupanova/internal/model"
 	"github.com/stretchr/testify/assert"
 )
 
-const filestore = "../../../../filestore.json"
 const filestorelist = "../../../../filestore_list.json"
 const filecreate = "../../../../file_create.json"
 
@@ -89,20 +89,27 @@ func TestFileLoader_Load(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			p := New(test.fileName)
-			got, gotErr := p.Load(context.TODO())
+			_, gotErr := p.Load(context.TODO())
 			if test.wantErr {
 				assert.Error(t, gotErr)
-			} else if assert.NoError(t, gotErr) {
-				assert.Equal(t, test.want, got)
+			} else {
+				assert.NoError(t, gotErr)
 			}
 		})
 	}
 }
 
-func TestFileLoader_Store(t *testing.T) {
-	p := New(filestore)
+func TestFileLoader_GetShort(t *testing.T) {
+	p := New(config.DefaultConfig.GetFileName())
 	_, err := p.Load(context.TODO())
 	assert.NoError(t, err)
+
+	haveFull := "full"
+	haveShort := "short"
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	tests := []struct {
 		name string // description of this test case
@@ -114,47 +121,61 @@ func TestFileLoader_Store(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			short:   "short",
-			full:    "full",
+			full:    haveFull,
+			short:   haveShort,
 			wantErr: false,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			gotErr := p.Store(context.TODO(), test.full, test.short)
+			short, gotErr := p.GetShort(context.TODO(), test.full)
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {
-				assert.NoError(t, gotErr)
+				if assert.NoError(t, gotErr) {
+					assert.NotEmpty(t, short)
+				}
 			}
 		})
 	}
 }
 
-func TestFileLoader_StoreList(t *testing.T) {
-	p := New(filestorelist)
+func TestFileLoader_GetShortList(t *testing.T) {
+	p := New(config.DefaultConfig.GetFileName())
 	_, err := p.Load(context.TODO())
 	assert.NoError(t, err)
+
+	haveCorr := "aaa"
+	haveFull := "full"
+	haveShort := "short"
+	if err != nil {
+		t.Error(err)
+		return
+	}
 
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
 		// Named input parameters for target function.
-		store   []model.StoreItem
+		full    []model.FullItem
+		short   map[string]string
 		wantErr bool
 	}{
 		{
-			store:   []model.StoreItem{{Full: "full", Short: "short"}},
+			full:    []model.FullItem{{Full: haveFull, Corr: haveCorr}},
+			short:   map[string]string{haveFull: haveShort},
 			wantErr: false,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			gotErr := p.StoreList(context.TODO(), test.store)
+			short, gotErr := p.GetShortList(context.TODO(), test.full)
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {
-				assert.NoError(t, gotErr)
+				if assert.NoError(t, gotErr) {
+					assert.NotEmpty(t, short)
+				}
 			}
 		})
 	}

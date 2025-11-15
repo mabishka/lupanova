@@ -6,6 +6,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/mabishka/lupanova/internal/model"
+	"github.com/mabishka/lupanova/internal/repository/db"
 )
 
 type ConnLoader struct {
@@ -47,72 +48,63 @@ func (p *ConnLoader) Load(ctx context.Context) (map[string]string, error) {
 		return nil, err
 	}
 
-	if _, err := p.conn.ExecContext(ctx,
-		`CREATE TABLE IF NOT EXISTS t_data (
-    		id SERIAL PRIMARY KEY,
-    		s_full VARCHAR(1000) NOT NULL,
-    		s_short VARCHAR(100) NOT NULL
-		);
-		CREATE INDEX IF NOT EXISTS idx_data_full ON t_data(s_full);
-		CREATE INDEX IF NOT EXISTS idx_data_short ON t_data(s_short); `); err != nil {
-
+	if err := db.Create(ctx, p.conn); err != nil {
 		return nil, err
 	}
 
-	rows, err := p.conn.QueryContext(ctx, "select s_full, s_short from t_data")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var full, short *string
-
-	list := make(map[string]string)
-	for rows.Next() {
-		if err := rows.Scan(&full, &short); err != nil {
-			return nil, err
-		}
-		if full != nil && short != nil {
-			list[*short] = *full
-		}
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return list, nil
+	return db.LoadList(ctx, p.conn)
 }
 
-func (p *ConnLoader) Store(ctx context.Context, full, short string) error {
+func (p *ConnLoader) GetShortList(ctx context.Context, fullList []model.FullItem) (map[string]string, error) {
 
 	if err := p.Ping(ctx); err != nil {
-		return err
-	}
-
-	_, err := p.conn.ExecContext(ctx, "insert into t_data(s_full, s_short) values($1, $2)", full, short)
-	return err
-}
-
-func (p *ConnLoader) StoreList(ctx context.Context, list []model.StoreItem) error {
-
-	if err := p.Ping(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
 	tx, err := p.conn.BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.PrepareContext(ctx, "insert into t_data(s_full, s_short) values($1, $2)")
-	if err != nil {
-		return err
+	shortList := make(map[string]string)
+
+	for _, full := range fullList {
+
+		short, err := db.GetShort(ctx, tx, full.Full)
+		if err != nil {
+			return nil, err
+		}
+		shortList[full.Full] = short
+	}
+	return shortList, tx.Commit()
+}
+
+func (p *ConnLoader) GetShort(ctx context.Context, full string) (string, error) {
+
+	if err := p.Ping(ctx); err != nil {
+		return "", err
 	}
 
-	for _, v := range list {
-		stmt.ExecContext(ctx, v.Full, v.Short)
+	tx, err := p.conn.BeginTx(ctx, nil)
+	if err != nil {
+		return "", err
 	}
-	return tx.Commit()
+	defer tx.Rollback()
+
+	short, err := db.GetShort(ctx, tx, full)
+	if err != nil {
+		return "", err
+	}
+
+	return short, tx.Commit()
+}
+
+func (p *ConnLoader) GetFull(ctx context.Context, short string) (string, error) {
+
+	if err := p.Ping(ctx); err != nil {
+		return "", err
+	}
+
+	return db.GetFull(ctx, p.conn, short)
 }

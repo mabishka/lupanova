@@ -197,7 +197,7 @@ func (p *ConnServer) HandlerGetPing(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set(model.HeaderContentType, model.ContentTypeJSON)
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 }
 
 // Эндпоинт /api/shorten/batch, принимающий в теле запроса множество URL для сокращения в формате json
@@ -234,15 +234,15 @@ func (p *StorageServer) HandlerPostBatch(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	enc, err := json.Marshal(response)
-	if err != nil {
-		logger.Log().Error("error encoding response", zap.Error(err))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-
+	for _, v := range response {
+		v.Short = p.format(v.Short)
 	}
 
 	w.Header().Set(model.HeaderContentType, model.ContentTypeJSON)
 	w.WriteHeader(http.StatusCreated)
-	w.Write(enc)
+
+	if err = json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "Error during encoding response", http.StatusInternalServerError)
+	}
+
 }

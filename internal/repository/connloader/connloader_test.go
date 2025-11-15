@@ -89,8 +89,11 @@ func TestConnLoader_Load(t *testing.T) {
 	}
 }
 
-func TestConnLoader_Store(t *testing.T) {
+func TestConnLoader_GetShort(t *testing.T) {
 
+	p := New("conn=a")
+	haveFull := "full"
+	haveShort, _ := p.GetShort(context.TODO(), haveFull)
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
@@ -101,21 +104,23 @@ func TestConnLoader_Store(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			short:   "short",
-			full:    "full",
+			full:    haveFull,
+			short:   haveShort,
 			wantErr: true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p := New("conn=a")
+
 			_, err := p.Load(context.TODO())
 			assert.Error(t, err)
-			gotErr := p.Store(context.TODO(), test.full, test.short)
+			short, gotErr := p.GetShort(context.TODO(), test.full)
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {
-				assert.NoError(t, gotErr)
+				if assert.NoError(t, gotErr) {
+					assert.Equal(t, short, test.short)
+				}
 			}
 		})
 	}
@@ -123,16 +128,22 @@ func TestConnLoader_Store(t *testing.T) {
 
 func TestConnLoader_StoreList(t *testing.T) {
 
+	p := New("conn=a")
+	haveCorr := "aaa"
+	haveFull := "full"
+	haveShort, _ := p.GetShort(context.TODO(), haveFull)
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
 		connName string
 		// Named input parameters for target function.
-		store   []model.StoreItem
+		full    []model.FullItem
+		short   []model.ShortItem
 		wantErr bool
 	}{
 		{
-			store:   []model.StoreItem{{Full: "full", Short: "short"}},
+			full:    []model.FullItem{{Full: haveFull, Corr: haveCorr}},
+			short:   []model.ShortItem{{Short: haveShort, Corr: haveCorr}},
 			wantErr: true,
 		},
 	}
@@ -141,11 +152,13 @@ func TestConnLoader_StoreList(t *testing.T) {
 			p := New("conn=a")
 			_, err := p.Load(context.TODO())
 			assert.Error(t, err)
-			gotErr := p.StoreList(context.TODO(), test.store)
+			short, gotErr := p.GetShortList(context.TODO(), test.full)
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {
-				assert.NoError(t, gotErr)
+				if assert.NoError(t, gotErr) {
+					assert.Equal(t, short, test.short)
+				}
 			}
 		})
 	}

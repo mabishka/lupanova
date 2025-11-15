@@ -4,6 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/mabishka/lupanova/internal/config"
+	"github.com/mabishka/lupanova/internal/model"
+	"github.com/mabishka/lupanova/internal/repository/connloader"
+	"github.com/mabishka/lupanova/internal/repository/fileloader"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -80,6 +84,99 @@ func TestServer_GetShort(t *testing.T) {
 			got, err := server.GetShort(context.TODO(), test.full)
 			assert.NoError(t, err)
 			assert.Equal(t, test.want, got, "full")
+		})
+	}
+}
+
+func TestServer_GetShortList(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		fullList []model.FullItem
+		wantErr  bool
+	}{
+		{
+			fullList: []model.FullItem{{Corr: "aaa", Full: "full"}},
+			wantErr:  true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			p := New()
+			got, err := p.GetShortList(context.Background(), test.fullList)
+			if test.wantErr {
+				assert.Error(t, err)
+			} else {
+				if assert.NoError(t, err) {
+					assert.NotEmpty(t, got)
+				}
+			}
+		})
+	}
+}
+
+func TestServer_Load(t *testing.T) {
+	conn := connloader.New("")
+	file := fileloader.New(config.DefaultConfig.GetFileName())
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		loader  model.StorageLoader
+		wantErr bool
+	}{
+		{
+			loader:  file,
+			wantErr: false,
+		},
+		{
+			loader:  &memLoader{},
+			wantErr: false,
+		},
+		{
+			loader:  conn,
+			wantErr: true,
+		},
+		{
+			loader:  nil,
+			wantErr: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			p := New()
+			err := p.Load(context.Background(), test.loader)
+			if test.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func Test_checkFull(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		full    string
+		wantErr bool
+	}{
+		{full: "http://ya.ru",
+			wantErr: false,
+		},
+		{
+			full:    "aaa",
+			wantErr: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := checkFull(test.full)
+			if test.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }

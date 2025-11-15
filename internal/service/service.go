@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/mabishka/lupanova/internal/logger"
 	"github.com/mabishka/lupanova/internal/model"
-	"github.com/mabishka/lupanova/pkg/rand"
 	"go.uber.org/zap"
 )
 
@@ -20,18 +20,19 @@ type Server struct {
 	loader    model.StorageLoader
 }
 
-const shortLen = 8
-
 func New() *Server {
 	return &Server{
 		RWMutex:   &sync.RWMutex{},
 		shortList: make(map[string]string),
 		fullList:  make(map[string]string),
+		loader:    &memLoader{},
 	}
 }
 
 func (p *Server) Load(ctx context.Context, loader model.StorageLoader) error {
-	p.loader = loader
+	if loader == nil {
+		return errors.New("empty loader")
+	}
 	list, err := loader.Load(ctx)
 	if err != nil {
 		logger.Log().Error("Server.Load", zap.Error(err))
@@ -42,26 +43,8 @@ func (p *Server) Load(ctx context.Context, loader model.StorageLoader) error {
 	for k, v := range p.shortList {
 		p.fullList[v] = k
 	}
-	return nil
-}
 
-func (p *Server) store(ctx context.Context, full, short string) error {
-	if p.loader != nil {
-		if err := p.loader.Store(ctx, full, short); err != nil {
-			logger.Log().Error("Server.store", zap.Error(err))
-			return err
-		}
-	}
-	return nil
-}
-
-func (p *Server) storelist(ctx context.Context, list []model.StoreItem) error {
-	if p.loader != nil {
-		if err := p.loader.StoreList(ctx, list); err != nil {
-			logger.Log().Error("Server.storelist", zap.Error(err))
-			return err
-		}
-	}
+	p.loader = loader
 	return nil
 }
 
@@ -75,7 +58,7 @@ func checkFull(full string) error {
 
 func (p *Server) GetShortList(ctx context.Context, fullList []model.FullItem) ([]model.ShortItem, error) {
 	shortList := make([]model.ShortItem, 0, len(fullList))
-	storeList := make([]model.StoreItem, 0, len(fullList))
+	storeList := make([]model.FullItem, 0, len(fullList))
 	for _, v := range fullList {
 
 		if err := checkFull(v.Full); err != nil {
@@ -86,23 +69,24 @@ func (p *Server) GetShortList(ctx context.Context, fullList []model.FullItem) ([
 			shortList = append(shortList, model.ShortItem{Corr: v.Corr, Short: short})
 			continue
 		}
+		storeList = append(storeList, v)
+	}
 
-		short, err := rand.CreateShort(shortLen)
-		if err != nil {
-			return nil, err
+	newList, err := p.loader.GetShortList(ctx, storeList)
+
+	if newList != nil {
+		for _, v := range storeList {
+			short, ok := newList[v.Full]
+			if !ok {
+				err = errors.Join(err, fmt.Errorf("short not created for full %s", v.Full))
+			}
+			p.shortList[v.Full] = short
+			p.fullList[short] = v.Full
+			shortList = append(shortList, model.ShortItem{Corr: v.Corr, Short: short})
 		}
-
-		p.shortList[short] = v.Full
-		p.fullList[v.Full] = short
-
-		shortList = append(shortList, model.ShortItem{Corr: v.Corr, Short: short})
-		storeList = append(storeList, model.StoreItem{Full: v.Full, Short: short})
 	}
 
-	if err := p.storelist(ctx, storeList); err != nil {
-		return nil, err
-	}
-	return shortList, nil
+	return shortList, err
 }
 
 func (p *Server) GetShort(ctx context.Context, full string) (string, error) {
@@ -117,7 +101,8 @@ func (p *Server) GetShort(ctx context.Context, full string) (string, error) {
 		return short, nil
 	}
 
-	short, err := rand.CreateShort(shortLen)
+	// Значение не найдено в памяти. Берем его из хранилища и сохраняем в память
+	short, err := p.loader.GetShort(ctx, full)
 	if err != nil {
 		return "", err
 	}
@@ -125,23 +110,7 @@ func (p *Server) GetShort(ctx context.Context, full string) (string, error) {
 	p.shortList[short] = full
 	p.fullList[full] = short
 
-	if err := p.store(ctx, full, short); err != nil {
-		return "", err
-	}
-
 	return short, nil
-}
-
-func (p *Server) GetFullList(ctx context.Context, shortList []model.ShortItem) ([]model.FullItem, error) {
-	fullList := make([]model.FullItem, 0, len(shortList))
-	for _, v := range shortList {
-		full, err := p.GetFull(ctx, v.Short)
-		if err != nil {
-			return nil, err
-		}
-		fullList = append(fullList, model.FullItem{Corr: v.Corr, Full: full})
-	}
-	return fullList, nil
 }
 
 func (p *Server) GetFull(ctx context.Context, short string) (string, error) {
@@ -151,6 +120,12 @@ func (p *Server) GetFull(ctx context.Context, short string) (string, error) {
 	short = strings.Trim(short, "/")
 	if full, ok := p.shortList[short]; ok {
 		return full, nil
+	}
+
+	// Значение не найдено в памяти. Берем его из хранилища.
+	short, err := p.loader.GetFull(ctx, short)
+	if err != nil {
+		return "", err
 	}
 
 	return "", fmt.Errorf("path %s not found", short)

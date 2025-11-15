@@ -56,8 +56,8 @@ func InitLogger(level string) error {
 	return nil
 }
 
-func WithLogging(h http.HandlerFunc) http.HandlerFunc {
-	
+func WithLogging(h http.Handler) http.Handler {
+
 	logFn := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
