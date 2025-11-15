@@ -197,7 +197,7 @@ func (p *ConnServer) HandlerGetPing(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set(model.HeaderContentType, model.ContentTypeJSON)
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 }
 
 // Эндпоинт /api/shorten/batch, принимающий в теле запроса множество URL для сокращения в формате json
