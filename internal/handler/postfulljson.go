@@ -3,12 +3,14 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/mabishka/lupanova/internal/logger"
 	"github.com/mabishka/lupanova/internal/model"
+	"github.com/mabishka/lupanova/pkg/utils"
 	"go.uber.org/zap"
 )
 
@@ -48,9 +50,9 @@ func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	short, err := p.GetShort(context.TODO(), full)
-	if err != nil {
-		logger.Log().Error("error getting short", zap.Error(err))
+	short, shorterr := p.GetShort(context.TODO(), full)
+	if shorterr != nil && !errors.Is(shorterr, utils.ErrExists) {
+		logger.Log().Error("error getting short", zap.Error(shorterr))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -68,6 +70,10 @@ func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.Header().Set(model.HeaderContentType, model.ContentTypeJSON)
-	w.WriteHeader(http.StatusCreated)
+	if shorterr != nil {
+		w.WriteHeader(http.StatusConflict)
+	} else {
+		w.WriteHeader(http.StatusCreated)
+	}
 	w.Write(enc)
 }

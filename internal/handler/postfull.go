@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/mabishka/lupanova/internal/logger"
 	"github.com/mabishka/lupanova/internal/model"
+	"github.com/mabishka/lupanova/pkg/utils"
 	"go.uber.org/zap"
 )
 
@@ -47,14 +49,18 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	short, err := p.GetShort(context.TODO(), full)
-	if err != nil {
+	short, shorterr := p.GetShort(context.TODO(), full)
+	if err != nil && !errors.Is(shorterr, utils.ErrExists) {
 		logger.Log().Error("error getting short", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	w.Header().Set(model.HeaderContentType, model.ContentTypeText)
-	w.WriteHeader(http.StatusCreated)
+	if shorterr != nil {
+		w.WriteHeader(http.StatusConflict)
+	} else {
+		w.WriteHeader(http.StatusCreated)
+	}
 	w.Write([]byte(p.format(short)))
 }

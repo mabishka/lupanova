@@ -10,6 +10,7 @@ import (
 
 	"github.com/mabishka/lupanova/internal/logger"
 	"github.com/mabishka/lupanova/internal/model"
+	"github.com/mabishka/lupanova/pkg/utils"
 	"go.uber.org/zap"
 )
 
@@ -28,7 +29,6 @@ func New() *Server {
 		loader:    &memLoader{},
 	}
 }
-
 
 func (p *Server) Load(ctx context.Context, loader model.StorageLoader) error {
 	if loader == nil {
@@ -95,7 +95,7 @@ func (p *Server) GetShort(ctx context.Context, full string) (string, error) {
 	}
 
 	if short, err := p.getShort(full); err == nil {
-		return short, nil
+		return short, utils.ErrExists
 	}
 
 	// Значение не найдено в памяти. Берем его из хранилища и сохраняем в память
