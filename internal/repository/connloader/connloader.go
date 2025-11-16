@@ -3,11 +3,13 @@ package connloader
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/mabishka/lupanova/internal/logger"
 	"github.com/mabishka/lupanova/internal/model"
 	"github.com/mabishka/lupanova/internal/repository/db"
+	"github.com/mabishka/lupanova/pkg/utils"
 	"go.uber.org/zap"
 )
 
@@ -78,7 +80,6 @@ func (p *ConnLoader) GetShortList(ctx context.Context, fullList []model.FullItem
 		logger.Log().Error("error", zap.Error(err))
 		return nil, err
 	}
-	// defer tx.Rollback()
 
 	shortList := make(map[string]string)
 
@@ -86,9 +87,11 @@ func (p *ConnLoader) GetShortList(ctx context.Context, fullList []model.FullItem
 
 		short, err := db.GetShort(ctx, tx, full.Full)
 		if err != nil {
-			logger.Log().Error("error", zap.Error(err))
-			tx.Rollback()
-			return nil, err
+			if !errors.Is(err, utils.ErrConflict) {
+				logger.Log().Error("error", zap.Error(err))
+				tx.Rollback()
+				return nil, err
+			}
 		}
 		shortList[full.Full] = short
 	}
@@ -113,7 +116,7 @@ func (p *ConnLoader) GetShort(ctx context.Context, full string) (string, error) 
 	if err != nil {
 		logger.Log().Error("error", zap.Error(err))
 		tx.Rollback()
-		return "", err
+		return short, err
 	}
 
 	return short, tx.Commit()

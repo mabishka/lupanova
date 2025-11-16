@@ -95,7 +95,7 @@ func (p *Server) GetShort(ctx context.Context, full string) (string, error) {
 	}
 
 	if short, err := p.getShort(full); err == nil {
-		return short, utils.ErrExists
+		return short, utils.ErrConflict
 	}
 
 	// Значение не найдено в памяти. Берем его из хранилища и сохраняем в память
@@ -120,13 +120,13 @@ func (p *Server) GetFull(ctx context.Context, short string) (string, error) {
 	}
 
 	// Значение не найдено в памяти. Берем его из хранилища.
-	short, err := p.loader.GetFull(ctx, short)
+	full, err := p.loader.GetFull(ctx, short)
 	if err != nil {
 		logger.Log().Info("service.GetFull get error", zap.Error(err))
 		return "", err
 	}
 
-	logger.Log().Info("service.GetFull not found")
-	return "", fmt.Errorf("path %s not found", short)
+	logger.Log().Info("service.GetFull return full", zap.String("short", short), zap.String("full", full))
+	return full, nil
 
 }

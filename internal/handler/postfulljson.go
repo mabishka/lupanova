@@ -51,7 +51,7 @@ func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Reque
 	}
 
 	short, shorterr := p.GetShort(context.TODO(), full)
-	if shorterr != nil && !errors.Is(shorterr, utils.ErrExists) {
+	if shorterr != nil && !errors.Is(shorterr, utils.ErrConflict) {
 		logger.Log().Error("error getting short", zap.Error(shorterr))
 		w.WriteHeader(http.StatusBadRequest)
 		return

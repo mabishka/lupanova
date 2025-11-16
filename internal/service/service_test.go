@@ -94,7 +94,7 @@ func TestServer_GetShort(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			got, err := server.GetShort(context.TODO(), test.full)
 			assert.Error(t, err)
-			assert.Equal(t, err, utils.ErrExists)
+			assert.Equal(t, err, utils.ErrConflict)
 			assert.Equal(t, test.want, got, "full")
 		})
 	}
