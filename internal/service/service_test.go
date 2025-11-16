@@ -4,17 +4,22 @@ import (
 	"context"
 	"testing"
 
-	"github.com/mabishka/lupanova/internal/config"
 	"github.com/mabishka/lupanova/internal/model"
 	"github.com/mabishka/lupanova/internal/repository/connloader"
 	"github.com/mabishka/lupanova/internal/repository/fileloader"
 	"github.com/stretchr/testify/assert"
 )
 
+const defaultFileName = "../../../storage.json"
+
 func TestServer_GetFull(t *testing.T) {
 
 	full := "http://yandex.ru"
 	server := New()
+
+	loader := connloader.New("postgres://user:user@localhost:5433/practicum?sslmode=disable")
+	server.Load(context.TODO(), loader)
+
 	short, err := server.GetShort(context.TODO(), full)
 	if err != nil {
 		t.Error(err)
@@ -61,6 +66,10 @@ func TestServer_GetFull(t *testing.T) {
 func TestServer_GetShort(t *testing.T) {
 	full := "http://yandex.ru"
 	server := New()
+
+	loader := connloader.New("postgres://user:user@localhost:5433/practicum?sslmode=disable")
+	server.Load(context.TODO(), loader)
+
 	short, err := server.GetShort(context.TODO(), full)
 	if err != nil {
 		t.Error(err)
@@ -117,7 +126,7 @@ func TestServer_GetShortList(t *testing.T) {
 
 func TestServer_Load(t *testing.T) {
 	conn := connloader.New("")
-	file := fileloader.New(config.DefaultConfig.GetFileName())
+	file := fileloader.New(defaultFileName)
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for target function.

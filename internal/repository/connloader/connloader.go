@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/mabishka/lupanova/internal/logger"
 	"github.com/mabishka/lupanova/internal/model"
 	"github.com/mabishka/lupanova/internal/repository/db"
+	"go.uber.org/zap"
 )
 
 type ConnLoader struct {
@@ -21,13 +23,19 @@ func New(addr string) *ConnLoader {
 
 func (p *ConnLoader) Create(ctx context.Context) error {
 
-	db, err := sql.Open("postgres", p.addr)
+	db, err := sql.Open("pgx", p.addr)
 	if err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return err
 	}
 	if err := db.PingContext(ctx); err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return err
 	}
+
+	db.SetMaxOpenConns(2) // Установить максимальное количество открытых соединений к базе данных
+	db.SetMaxIdleConns(2) // Установить максимальное количество неактивных соединений в пуле
+
 	p.conn = db
 	return nil
 }
@@ -36,6 +44,7 @@ func (p *ConnLoader) Ping(ctx context.Context) error {
 
 	if p.conn == nil {
 		if err := p.Create(ctx); err != nil {
+			logger.Log().Error("error", zap.Error(err))
 			return err
 		}
 	}
@@ -45,10 +54,12 @@ func (p *ConnLoader) Ping(ctx context.Context) error {
 func (p *ConnLoader) Load(ctx context.Context) (map[string]string, error) {
 
 	if err := p.Ping(ctx); err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return nil, err
 	}
 
 	if err := db.Create(ctx, p.conn); err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return nil, err
 	}
 
@@ -58,14 +69,16 @@ func (p *ConnLoader) Load(ctx context.Context) (map[string]string, error) {
 func (p *ConnLoader) GetShortList(ctx context.Context, fullList []model.FullItem) (map[string]string, error) {
 
 	if err := p.Ping(ctx); err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return nil, err
 	}
 
 	tx, err := p.conn.BeginTx(ctx, nil)
 	if err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return nil, err
 	}
-	defer tx.Rollback()
+	// defer tx.Rollback()
 
 	shortList := make(map[string]string)
 
@@ -73,6 +86,8 @@ func (p *ConnLoader) GetShortList(ctx context.Context, fullList []model.FullItem
 
 		short, err := db.GetShort(ctx, tx, full.Full)
 		if err != nil {
+			logger.Log().Error("error", zap.Error(err))
+			tx.Rollback()
 			return nil, err
 		}
 		shortList[full.Full] = short
@@ -83,17 +98,21 @@ func (p *ConnLoader) GetShortList(ctx context.Context, fullList []model.FullItem
 func (p *ConnLoader) GetShort(ctx context.Context, full string) (string, error) {
 
 	if err := p.Ping(ctx); err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return "", err
 	}
 
 	tx, err := p.conn.BeginTx(ctx, nil)
 	if err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return "", err
 	}
-	defer tx.Rollback()
+	//defer tx.Rollback()
 
 	short, err := db.GetShort(ctx, tx, full)
 	if err != nil {
+		logger.Log().Error("error", zap.Error(err))
+		tx.Rollback()
 		return "", err
 	}
 
@@ -103,6 +122,7 @@ func (p *ConnLoader) GetShort(ctx context.Context, full string) (string, error) 
 func (p *ConnLoader) GetFull(ctx context.Context, short string) (string, error) {
 
 	if err := p.Ping(ctx); err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return "", err
 	}
 

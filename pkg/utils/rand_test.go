@@ -1,11 +1,11 @@
-package rand_test
+package utils_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/mabishka/lupanova/pkg/rand"
+	"github.com/mabishka/lupanova/pkg/utils"
 )
 
 func TestCreateShort(t *testing.T) {
@@ -23,7 +23,7 @@ func TestCreateShort(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := rand.CreateShort(test.n)
+			got, err := utils.CreateShort(test.n)
 
 			assert.NoError(t, err)
 			assert.Equal(t, test.want, len(got))

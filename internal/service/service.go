@@ -29,6 +29,7 @@ func New() *Server {
 	}
 }
 
+
 func (p *Server) Load(ctx context.Context, loader model.StorageLoader) error {
 	if loader == nil {
 		return errors.New("empty loader")
@@ -38,11 +39,8 @@ func (p *Server) Load(ctx context.Context, loader model.StorageLoader) error {
 		logger.Log().Error("Server.Load", zap.Error(err))
 		return err
 	}
-	p.shortList = list
 
-	for k, v := range p.shortList {
-		p.fullList[v] = k
-	}
+	p.addList(list)
 
 	p.loader = loader
 	return nil
@@ -65,7 +63,7 @@ func (p *Server) GetShortList(ctx context.Context, fullList []model.FullItem) ([
 			return nil, err
 		}
 
-		if short, ok := p.fullList[v.Full]; ok {
+		if short, err := p.getShort(v.Full); err == nil {
 			shortList = append(shortList, model.ShortItem{Corr: v.Corr, Short: short})
 			continue
 		}
@@ -80,8 +78,7 @@ func (p *Server) GetShortList(ctx context.Context, fullList []model.FullItem) ([
 			if !ok {
 				err = errors.Join(err, fmt.Errorf("short not created for full %s", v.Full))
 			}
-			p.shortList[v.Full] = short
-			p.fullList[short] = v.Full
+			p.addItem(v.Full, short)
 			shortList = append(shortList, model.ShortItem{Corr: v.Corr, Short: short})
 		}
 	}
@@ -90,14 +87,14 @@ func (p *Server) GetShortList(ctx context.Context, fullList []model.FullItem) ([
 }
 
 func (p *Server) GetShort(ctx context.Context, full string) (string, error) {
-	p.Lock()
-	defer p.Unlock()
+
+	logger.Log().Info("service.GetFull", zap.String("full", full))
 
 	if err := checkFull(full); err != nil {
 		return "", err
 	}
 
-	if short, ok := p.fullList[full]; ok {
+	if short, err := p.getShort(full); err == nil {
 		return short, nil
 	}
 
@@ -107,27 +104,29 @@ func (p *Server) GetShort(ctx context.Context, full string) (string, error) {
 		return "", err
 	}
 
-	p.shortList[short] = full
-	p.fullList[full] = short
+	p.addItem(full, short)
 
 	return short, nil
 }
 
 func (p *Server) GetFull(ctx context.Context, short string) (string, error) {
-	p.RLock()
-	defer p.RUnlock()
+
+	logger.Log().Info("service.GetFull", zap.String("short", short))
 
 	short = strings.Trim(short, "/")
-	if full, ok := p.shortList[short]; ok {
+	if full, err := p.getFull(short); err == nil {
+		logger.Log().Info("service.GetFull from memory", zap.String("short", short), zap.String("full", full))
 		return full, nil
 	}
 
 	// Значение не найдено в памяти. Берем его из хранилища.
 	short, err := p.loader.GetFull(ctx, short)
 	if err != nil {
+		logger.Log().Info("service.GetFull get error", zap.Error(err))
 		return "", err
 	}
 
+	logger.Log().Info("service.GetFull not found")
 	return "", fmt.Errorf("path %s not found", short)
 
 }

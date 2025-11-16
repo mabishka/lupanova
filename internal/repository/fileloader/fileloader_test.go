@@ -4,13 +4,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/mabishka/lupanova/internal/config"
 	"github.com/mabishka/lupanova/internal/model"
 	"github.com/stretchr/testify/assert"
 )
 
 const filestorelist = "../../../../filestore_list.json"
 const filecreate = "../../../../file_create.json"
+const defaultFileName = "../../../storage.json"
 
 func TestFileLoader_exist(t *testing.T) {
 	tests := []struct {
@@ -100,7 +100,7 @@ func TestFileLoader_Load(t *testing.T) {
 }
 
 func TestFileLoader_GetShort(t *testing.T) {
-	p := New(config.DefaultConfig.GetFileName())
+	p := New(defaultFileName)
 	_, err := p.Load(context.TODO())
 	assert.NoError(t, err)
 
@@ -141,7 +141,7 @@ func TestFileLoader_GetShort(t *testing.T) {
 }
 
 func TestFileLoader_GetShortList(t *testing.T) {
-	p := New(config.DefaultConfig.GetFileName())
+	p := New(defaultFileName)
 	_, err := p.Load(context.TODO())
 	assert.NoError(t, err)
 

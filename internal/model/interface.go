@@ -21,7 +21,5 @@ type Storage interface {
 	GetShort(ctx context.Context, full string) (string, error)
 	GetFull(ctx context.Context, short string) (string, error)
 
-	// GetFullList(ctx context.Context, short []ShortItem) ([]FullItem, error)
-
 	Load(ctx context.Context, loader StorageLoader) error
 }

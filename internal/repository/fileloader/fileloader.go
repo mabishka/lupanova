@@ -10,8 +10,10 @@ import (
 	"sync"
 
 	"github.com/mabishka/lupanova/internal/config"
+	"github.com/mabishka/lupanova/internal/logger"
 	"github.com/mabishka/lupanova/internal/model"
-	"github.com/mabishka/lupanova/pkg/rand"
+	"github.com/mabishka/lupanova/pkg/utils"
+	"go.uber.org/zap"
 )
 
 type FileLoader struct {
@@ -131,12 +133,15 @@ func (p *FileLoader) GetShort(ctx context.Context, full string) (string, error) 
 }
 
 func (p *FileLoader) GetFull(ctx context.Context, short string) (string, error) {
+	err := fmt.Errorf("full not found for short %s", short)
+	logger.Log().Error("error", zap.Error(err))
 	return "", fmt.Errorf("full not found for short %s", short)
 }
 
 func (p *FileLoader) preSave(file *os.File) error {
 	filesize := int64(p.fileSize) - 1
 	if err := file.Truncate(filesize); err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return err
 	}
 	p.fileSize = filesize
@@ -148,14 +153,16 @@ func (p *FileLoader) preSave(file *os.File) error {
 func (p *FileLoader) postSave(file *os.File) {
 	n, err := file.Write([]byte("]"))
 	if err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return
 	}
 	p.fileSize += int64(n)
 }
 
 func (p *FileLoader) writeItem(buffer *bufio.Writer, full string) (string, int, error) {
-	short, err := rand.CreateShort(config.ShortLen)
+	short, err := utils.CreateShort(config.ShortLen)
 	if err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return "", 0, err
 	}
 
@@ -166,6 +173,7 @@ func (p *FileLoader) writeItem(buffer *bufio.Writer, full string) (string, int, 
 
 	sendData, err := json.Marshal(&item)
 	if err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return "", 0, err
 	}
 
@@ -173,6 +181,7 @@ func (p *FileLoader) writeItem(buffer *bufio.Writer, full string) (string, int, 
 	if p.fileSize > 2 {
 		n, err := buffer.Write([]byte(",\n"))
 		if err != nil {
+			logger.Log().Error("error", zap.Error(err))
 			return "", 0, err
 		}
 		size += n
@@ -180,6 +189,7 @@ func (p *FileLoader) writeItem(buffer *bufio.Writer, full string) (string, int, 
 
 	n, err := buffer.Write(sendData)
 	if err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return "", 0, err
 	}
 	size += n
@@ -190,6 +200,7 @@ func (p *FileLoader) create() error {
 
 	exist, err := p.exist()
 	if err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return err
 	}
 	if exist {
@@ -200,6 +211,7 @@ func (p *FileLoader) create() error {
 	defer p.Unlock()
 
 	if err := os.WriteFile(p.fileName, []byte("[]"), 0644); err != nil {
+		logger.Log().Error("error", zap.Error(err))
 		return err
 	}
 	p.fileSize = 2
@@ -221,6 +233,7 @@ func (p *FileLoader) exist() (bool, error) {
 		if os.IsNotExist(err) {
 			return false, nil
 		}
+		logger.Log().Error("error", zap.Error(err))
 		return false, err
 	}
 	p.fileSize = stat.Size()

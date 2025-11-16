@@ -13,7 +13,7 @@ import (
 // Флаг -l отвечает за уровень логирования (значение по умолчанию: "Info")
 // Флаг -f путь до файла, куда сохраняются данные в формате JSON (значение по умолчанию "./storage.json")
 
-const ShortLen = 8
+const ShortLen = 6
 
 const (
 	defaultServerAddress = ":8080"
@@ -31,7 +31,7 @@ const (
 	envLogLevel     = "LOG_LEVEL"
 	descLogLevel    = "уровень логирования"
 
-	defaultFileName = "./storage.json"
+	defaultFileName = ""
 	flagFileName    = "f"
 	envFileName     = "FILE_STORAGE_PATH"
 	descFileName    = "файл для хранения сокращенных адресов"

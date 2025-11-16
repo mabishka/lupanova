@@ -32,12 +32,8 @@ func TestStorageServer_HandlerPostFull(t *testing.T) {
 
 	server := New(addr)
 	router := chi.NewRouter()
-	//router.Post("/", server.HandlerPostFull)
-	//router.Get("/{id}", server.HandlerGetFull)
-	//router.Post(`/api/shorten`, server.HandlerPostFullJSON)
 
 	router.Get(`/{id}`, server.HandlerGetFull)
-	//router.Get(`/ping`, server.(connServer).HandlerGetPing)
 	router.Post(`/api/shorten`, server.HandlerPostFullJSON)
 	router.Post(`/api/shorten/batch`, server.HandlerPostBatch)
 	router.Post(`/`, server.HandlerPostFull)
@@ -141,12 +137,8 @@ func TestStorageServer_HandlerGetFull(t *testing.T) {
 
 	server := New(addr)
 	router := chi.NewRouter()
-	//router.Post("/", server.HandlerPostFull)
-	//router.Get("/{id}", server.HandlerGetFull)
-	//router.Post(`/api/shorten`, server.HandlerPostFullJSON)
 
 	router.Get(`/{id}`, server.HandlerGetFull)
-	//router.Get(`/ping`, server.(connServer).HandlerGetPing)
 	router.Post(`/api/shorten`, server.HandlerPostFullJSON)
 	router.Post(`/api/shorten/batch`, server.HandlerPostBatch)
 	router.Post(`/`, server.HandlerPostFull)
@@ -235,12 +227,8 @@ func TestStorageServer_HandlerPostFullJSON(t *testing.T) {
 
 	server := New(addr)
 	router := chi.NewRouter()
-	//router.Post("/", server.HandlerPostFull)
-	//router.Get("/{id}", server.HandlerGetFull)
-	//router.Post(`/api/shorten`, server.HandlerPostFullJSON)
 
 	router.Get(`/{id}`, server.HandlerGetFull)
-	//router.Get(`/ping`, server.(connServer).HandlerGetPing)
 	router.Post(`/api/shorten`, server.HandlerPostFullJSON)
 	router.Post(`/api/shorten/batch`, server.HandlerPostBatch)
 	router.Post(`/`, server.HandlerPostFull)
@@ -400,10 +388,8 @@ func TestStorageServer_HandlerPostBatch(t *testing.T) {
 
 	server := New(addr)
 	router := chi.NewRouter()
-	//router.Post(`/api/shorten/batch`, server.HandlerPostBatch)
 
 	router.Get(`/{id}`, server.HandlerGetFull)
-	//router.Get(`/ping`, server.(connServer).HandlerGetPing)
 	router.Post(`/api/shorten`, server.HandlerPostFullJSON)
 	router.Post(`/api/shorten/batch`, server.HandlerPostBatch)
 	router.Post(`/`, server.HandlerPostFull)

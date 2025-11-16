@@ -38,15 +38,6 @@ func (w *compressResponseWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
-/*
-func (w *compressResponseWriter) WriteHeader(code int) {
-	if code < 300 && w.writer != nil {
-		w.Header().Set(model.HeaderContentEncoding, w.contentEncoding)
-	}
-	w.ResponseWriter.WriteHeader(code)
-}
-*/
-
 func (w *compressResponseWriter) Close() {
 	if w.writer != nil {
 		w.writer.Close()

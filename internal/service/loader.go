@@ -6,7 +6,7 @@ import (
 
 	"github.com/mabishka/lupanova/internal/config"
 	"github.com/mabishka/lupanova/internal/model"
-	"github.com/mabishka/lupanova/pkg/rand"
+	"github.com/mabishka/lupanova/pkg/utils"
 )
 
 type memLoader struct{}
@@ -18,7 +18,7 @@ func (p *memLoader) Load(ctx context.Context) (map[string]string, error) {
 func (p *memLoader) GetShortList(ctx context.Context, fullList []model.FullItem) (map[string]string, error) {
 	resp := make(map[string]string)
 	for _, v := range fullList {
-		short, err := rand.CreateShort(config.ShortLen)
+		short, err := utils.CreateShort(config.ShortLen)
 		if err != nil {
 			return nil, err
 		}
@@ -28,7 +28,7 @@ func (p *memLoader) GetShortList(ctx context.Context, fullList []model.FullItem)
 }
 
 func (p *memLoader) GetShort(ctx context.Context, full string) (string, error) {
-	short, err := rand.CreateShort(config.ShortLen)
+	short, err := utils.CreateShort(config.ShortLen)
 	if err != nil {
 		return "", err
 	}

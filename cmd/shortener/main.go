@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -17,7 +18,9 @@ import (
 )
 
 func main() {
-	run(context.Background())
+	ctx, fnCancel := context.WithCancelCause(context.Background())
+	defer fnCancel(errors.New("exit"))
+	run(ctx)
 }
 
 func run(ctx context.Context) {
@@ -26,6 +29,14 @@ func run(ctx context.Context) {
 	if err := logger.InitLogger(config.GetLogLevel()); err != nil {
 		panic(err)
 	}
+
+	logger.Log().Info("config",
+		zap.String("serverAddress", config.GetServerAddress()),
+		zap.String("baseAddress", config.GetBaseAddress()),
+		zap.String("logLevel", config.GetLogLevel()),
+		zap.String("fileName", config.GetFileName()),
+		zap.String("connAddress", config.GetConnAddress()),
+	)
 
 	server := handler.New(config.GetBaseAddress())
 
@@ -66,10 +77,10 @@ func run(ctx context.Context) {
 	router.Use(compress.WithCompress)
 
 	router.Post("/", server.HandlerPostFull)
-	router.Get("/{id}", server.HandlerGetFull)
 	router.Post("/api/shorten", server.HandlerPostFullJSON)
-	router.Get("/ping", connServer.HandlerGetPing)
 	router.Post("/api/shorten/batch", server.HandlerPostBatch)
+	router.Get("/{id}", server.HandlerGetFull)
+	router.Get("/ping", connServer.HandlerGetPing)
 
 	go func() {
 		if err := http.ListenAndServe(config.GetServerAddress(), router); err != nil {
@@ -77,5 +88,8 @@ func run(ctx context.Context) {
 		}
 	}()
 
+	logger.Log().Info("listen port", zap.String("serverAddress", config.GetServerAddress()))
+
 	<-ctx.Done()
+	logger.Log().Info("exit")
 }
