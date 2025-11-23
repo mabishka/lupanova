@@ -68,7 +68,7 @@ func TestWithLogging(t *testing.T) {
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodPost, "/", body)
 			r.Header.Add("Content-Type", contentType)
-			got(w, r)
+			got.(http.HandlerFunc)(w, r)
 
 			result := w.Result()
 			defer result.Body.Close()

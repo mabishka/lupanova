@@ -17,3 +17,18 @@ type Request struct {
 type Response struct {
 	Short string `json:"result"`
 }
+
+type ShortItem struct {
+	Corr  string `json:"correlation_id"`
+	Short string `json:"short_url"`
+}
+
+type FullItem struct {
+	Corr string `json:"correlation_id"`
+	Full string `json:"original_url"`
+}
+
+type StoreItem struct {
+	Short string `json:"short"`
+	Full  string `json:"full"`
+}

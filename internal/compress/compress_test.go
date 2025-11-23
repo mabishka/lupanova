@@ -160,7 +160,8 @@ func TestWithCompress(t *testing.T) {
 			for k, v := range test.headers {
 				r.Header.Add(k, v)
 			}
-			got(w, r)
+
+			got.(http.HandlerFunc)(w, r)
 
 			result := w.Result()
 			defer result.Body.Close()

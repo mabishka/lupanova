@@ -8,7 +8,7 @@ import (
 
 func Test_run(t *testing.T) {
 
-	ctx, fnCancel := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, fnCancel := context.WithTimeout(context.Background(), time.Second*2)
 	defer fnCancel()
 	tests := []struct {
 		name    string // description of this test case
@@ -24,4 +24,5 @@ func Test_run(t *testing.T) {
 			run(ctx)
 		})
 	}
+
 }

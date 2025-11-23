@@ -28,6 +28,7 @@ type ResponseWriter interface {
 type compressResponseWriter struct {
 	http.ResponseWriter // встраиваем оригинальный http.ResponseWriter
 	writer              io.WriteCloser
+	contentEncoding     string
 }
 
 func (w *compressResponseWriter) Write(b []byte) (int, error) {
@@ -54,16 +55,17 @@ func decompress(r *http.Request) *http.Request {
 	case compressTypeGzip:
 		gz, err := gzip.NewReader(r.Body)
 		if err != nil {
-			logger.Log().Debug("decompress error",
+			logger.Log().Error("decompress error",
 				zap.Error(err),
 				zap.String(model.HeaderContentEncoding, decompressType))
 			return r
 		}
+
 		r.Body = gz
 	case compressTypeDeflate:
 		lz, err := zlib.NewReader(r.Body)
 		if err != nil {
-			logger.Log().Debug("decompress error",
+			logger.Log().Error("decompress error",
 				zap.Error(err),
 				zap.String(model.HeaderContentEncoding, decompressType))
 			return r
@@ -71,7 +73,7 @@ func decompress(r *http.Request) *http.Request {
 		r.Body = lz
 	case compressTypeEmpty:
 	default:
-		logger.Log().Debug("decompress error",
+		logger.Log().Error("decompress error",
 			zap.Error(errors.New("unsupport decompress type")),
 			zap.String(model.HeaderContentEncoding, decompressType))
 	}
@@ -84,10 +86,15 @@ func compress(w http.ResponseWriter, r *http.Request) ResponseWriter {
 		ResponseWriter: w,
 	}
 
-	for _, contentType := range r.Header.Values(model.HeaderAcceptEncoding) {
+	content := w.Header().Get(model.HeaderContentType)
+	if content != model.ContentTypeJSON && content != model.ContentTypeHTML {
+		return cw
+	}
+
+	for _, contentEncoding := range r.Header.Values(model.HeaderAcceptEncoding) {
 		var compressType string
 		compressLevel := 1
-		for _, value := range strings.Split(contentType, ",") {
+		for _, value := range strings.Split(contentEncoding, ",") {
 			value = strings.TrimSpace(value)
 			if strings.HasPrefix(value, "q=") {
 				fmt.Scanf("q=%d", compressLevel)
@@ -103,25 +110,27 @@ func compress(w http.ResponseWriter, r *http.Request) ResponseWriter {
 
 			gz, err := gzip.NewWriterLevel(w, compressLevel)
 			if err != nil {
-				logger.Log().Debug("compress error",
+				logger.Log().Error("compress error",
 					zap.Error(err),
 					zap.String(model.HeaderContentEncoding, compressType))
 
 				continue
 			}
-			w.Header().Set(model.HeaderContentEncoding, compressType)
+			cw.contentEncoding = compressType
+			cw.Header().Set(model.HeaderContentEncoding, compressType)
 			cw.writer = gz
 			return cw
 		case compressTypeDeflate:
 			lz, err := zlib.NewWriterLevel(w, compressLevel)
 			if err != nil {
-				logger.Log().Debug("compress error",
+				logger.Log().Error("compress error",
 					zap.Error(err),
 					zap.String(model.HeaderContentEncoding, compressType))
 
 				continue
 			}
-			w.Header().Set(model.HeaderContentEncoding, compressType)
+			cw.contentEncoding = compressType
+			cw.Header().Set(model.HeaderContentEncoding, compressType)
 			cw.writer = lz
 			return cw
 		}
@@ -130,8 +139,7 @@ func compress(w http.ResponseWriter, r *http.Request) ResponseWriter {
 	return cw
 }
 
-func WithCompress(h http.HandlerFunc) http.HandlerFunc {
-
+func WithCompress(h http.Handler) http.Handler {
 	compressFn := func(w http.ResponseWriter, r *http.Request) {
 
 		cr := decompress(r)

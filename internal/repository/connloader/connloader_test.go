@@ -1,4 +1,4 @@
-package fileloader
+package connloader
 
 import (
 	"context"
@@ -8,56 +8,50 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const filestorelist = "../../../../filestore_list.json"
-const filecreate = "../../../../file_create.json"
-const defaultFileName = "../../../storage.json"
-
-func TestFileLoader_exist(t *testing.T) {
+func TestConnLoader_Ping(t *testing.T) {
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
-		fileName string
-		want     bool
+		connName string
+		wantErr  bool
 	}{
 		{
-			fileName: "main.go",
-			want:     false,
-		},
-		{
-			fileName: "go.mod",
-			want:     false,
-		},
-		{
-			fileName: "fileloader_test.go",
-			want:     true,
+			name:     "negative",
+			connName: "conn",
+			wantErr:  true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p := New(test.fileName)
-			got, err := p.exist()
-			assert.NoError(t, err)
-			assert.Equal(t, test.want, got)
+			p := New(test.connName)
+			err := p.Ping(context.TODO())
+
+			if test.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
 
-func TestFileLoader_create(t *testing.T) {
+func TestConnLoader_create(t *testing.T) {
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
-		fileName string
+		connName string
 		wantErr  bool
 	}{
 		{
-			fileName: filecreate,
-			wantErr:  false,
+			name:     "negative",
+			connName: "conn",
+			wantErr:  true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p := New(test.fileName)
-			gotErr := p.create()
+			p := New(test.connName)
+			gotErr := p.Create(context.TODO())
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {
@@ -67,28 +61,24 @@ func TestFileLoader_create(t *testing.T) {
 	}
 }
 
-func TestFileLoader_Load(t *testing.T) {
+func TestConnLoader_Load(t *testing.T) {
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
-		fileName string
+		connName string
 		want     map[string]string
 		wantErr  bool
 	}{
 		{
-			fileName: filestorelist,
-			want:     map[string]string{},
-			wantErr:  false,
-		},
-		{
-			fileName: "fileloader_test.go",
+			name:     "negative",
+			connName: "err",
 			want:     map[string]string{},
 			wantErr:  true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p := New(test.fileName)
+			p := New(test.connName)
 			_, gotErr := p.Load(context.TODO())
 			if test.wantErr {
 				assert.Error(t, gotErr)
@@ -99,22 +89,15 @@ func TestFileLoader_Load(t *testing.T) {
 	}
 }
 
-func TestFileLoader_GetShort(t *testing.T) {
-	p := New(defaultFileName)
-	_, err := p.Load(context.TODO())
-	assert.NoError(t, err)
+func TestConnLoader_GetShort(t *testing.T) {
 
+	p := New("conn=a")
 	haveFull := "full"
-	haveShort := "short"
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
+	haveShort, _ := p.GetShort(context.TODO(), haveFull)
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
-		fileName string
+		connName string
 		// Named input parameters for target function.
 		full    string
 		short   string
@@ -123,58 +106,58 @@ func TestFileLoader_GetShort(t *testing.T) {
 		{
 			full:    haveFull,
 			short:   haveShort,
-			wantErr: false,
+			wantErr: true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+
+			_, err := p.Load(context.TODO())
+			assert.Error(t, err)
 			short, gotErr := p.GetShort(context.TODO(), test.full)
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {
 				if assert.NoError(t, gotErr) {
-					assert.NotEmpty(t, short)
+					assert.Equal(t, short, test.short)
 				}
 			}
 		})
 	}
 }
 
-func TestFileLoader_GetShortList(t *testing.T) {
-	p := New(defaultFileName)
-	_, err := p.Load(context.TODO())
-	assert.NoError(t, err)
+func TestConnLoader_StoreList(t *testing.T) {
 
+	p := New("conn=a")
 	haveCorr := "aaa"
 	haveFull := "full"
-	haveShort := "short"
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
+	haveShort, _ := p.GetShort(context.TODO(), haveFull)
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
+		connName string
 		// Named input parameters for target function.
 		full    []model.FullItem
-		short   map[string]string
+		short   []model.ShortItem
 		wantErr bool
 	}{
 		{
 			full:    []model.FullItem{{Full: haveFull, Corr: haveCorr}},
-			short:   map[string]string{haveFull: haveShort},
-			wantErr: false,
+			short:   []model.ShortItem{{Short: haveShort, Corr: haveCorr}},
+			wantErr: true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			p := New("conn=a")
+			_, err := p.Load(context.TODO())
+			assert.Error(t, err)
 			short, gotErr := p.GetShortList(context.TODO(), test.full)
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {
 				if assert.NoError(t, gotErr) {
-					assert.NotEmpty(t, short)
+					assert.Equal(t, short, test.short)
 				}
 			}
 		})
