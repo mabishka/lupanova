@@ -5,9 +5,15 @@ const (
 	HeaderContentEncoding = "Content-Encoding"
 	HeaderAcceptEncoding  = "Accept-Encoding"
 	HeaderLocation        = "Location"
+	HeaderAuth            = "Authorisation"
 	ContentTypeText       = "text/plain"
 	ContentTypeJSON       = "application/json"
 	ContentTypeHTML       = "text/html"
+
+	CookieAuth = "Auth"
+	CookieUser = "User"
+
+	ContextValueUser = "User"
 )
 
 type Request struct {
@@ -29,6 +35,6 @@ type FullItem struct {
 }
 
 type StoreItem struct {
-	Short string `json:"short"`
-	Full  string `json:"full"`
+	Short string `json:"short_url"`
+	Full  string `json:"original_url"`
 }

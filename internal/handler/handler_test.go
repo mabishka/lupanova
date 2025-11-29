@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/mabishka/lupanova/internal/model"
 	"github.com/mabishka/lupanova/internal/repository/connloader"
 	"github.com/stretchr/testify/assert"
@@ -147,7 +148,8 @@ func TestStorageServer_HandlerGetFull(t *testing.T) {
 
 	haveMethod := http.MethodGet
 	full := "http://yandex.ru"
-	short, err := server.GetShort(context.TODO(), full)
+	user := uuid.New().String()
+	short, err := server.GetShort(context.TODO(), full, user)
 	if err != nil {
 		t.Error(err)
 		return
@@ -451,6 +453,103 @@ func TestStorageServer_HandlerPostBatch(t *testing.T) {
 			r.Header.Add(model.HeaderContentType, test.have.contentType)
 			w := httptest.NewRecorder()
 			server.HandlerPostFullJSON(w, r)
+
+			result := w.Result()
+			haveShort, _ := io.ReadAll(result.Body)
+			defer result.Body.Close()
+
+			assert.Equal(t, test.want.code, result.StatusCode)
+
+			if result.StatusCode == http.StatusCreated {
+				assert.Equal(t, test.want.contentType, result.Header.Get(model.HeaderContentType))
+
+				var response model.Response
+				err := json.Unmarshal(haveShort, &response)
+				if assert.NoError(t, err) {
+					_, err := url.ParseRequestURI(string(response.Short))
+					assert.NoError(t, err)
+
+				}
+			}
+		})
+	}
+}
+
+func TestStorageServer_HandlerGetUser(t *testing.T) {
+	type have struct {
+		method      string
+		contentType string
+		body        string
+	}
+	type want struct {
+		code        int
+		contentType string
+	}
+
+	server := New(addr)
+	router := chi.NewRouter()
+
+	router.Get(`/{id}`, server.HandlerGetFull)
+	router.Post(`/api/shorten`, server.HandlerPostFullJSON)
+	router.Post(`/api/shorten/batch`, server.HandlerPostBatch)
+	router.Post(`/`, server.HandlerPostFull)
+
+	go http.ListenAndServe(addr, router)
+
+	haveMethod := http.MethodPost
+	haveBody := `{ "original_url": "http://ya.ru" , "correlation_id": "12345"}`
+	haveContentType := model.ContentTypeJSON
+	wantContentType := model.ContentTypeJSON
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for receiver constructor.
+		have have
+		want want
+	}{
+		{
+			name: "negative method",
+			have: have{
+				method:      http.MethodGet,
+				contentType: haveContentType,
+				body:        haveBody,
+			},
+			want: want{
+				code:        http.StatusBadRequest,
+				contentType: wantContentType,
+			},
+		},
+		{
+			name: "negative contentType",
+			have: have{
+				method:      haveMethod,
+				contentType: "plain/text",
+				body:        haveBody,
+			},
+			want: want{
+				code:        http.StatusBadRequest,
+				contentType: wantContentType,
+			},
+		},
+		{
+			name: "negative body",
+			have: have{
+				method:      haveMethod,
+				contentType: haveContentType,
+				body:        "http//ya.ru",
+			},
+			want: want{
+				code:        http.StatusBadRequest,
+				contentType: wantContentType,
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			body := strings.NewReader(test.have.body)
+			r := httptest.NewRequest(test.have.method, `/api/shorten/batch`, body)
+			r.Header.Add(model.HeaderContentType, test.have.contentType)
+			w := httptest.NewRecorder()
+			server.HandlerGetUser(w, r)
 
 			result := w.Result()
 			haveShort, _ := io.ReadAll(result.Body)

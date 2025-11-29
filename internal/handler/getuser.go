@@ -5,42 +5,58 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/mabishka/lupanova/internal/auth"
 	"github.com/mabishka/lupanova/internal/logger"
 	"github.com/mabishka/lupanova/internal/model"
 	"go.uber.org/zap"
 )
 
-// Эндпоинт /api/shorten/batch, принимающий в теле запроса множество URL для сокращения в формате json
-func (p *StorageServer) HandlerPostBatch(w http.ResponseWriter, r *http.Request) {
+func getUser(r *http.Request) string {
+	token := r.Header.Get(model.HeaderAuth)
+	return auth.GetUser(token)
+}
 
-	logger.Log().Info("HandlerPostBatch")
-	if r.Method != http.MethodPost {
+// Эндпоинт /api/shorten/batch, принимающий в теле запроса множество URL для сокращения в формате json
+func (p *StorageServer) HandlerGetUser(w http.ResponseWriter, r *http.Request) {
+
+	logger.Log().Info("HandlerGetUser")
+	if r.Method != http.MethodGet {
 		logger.Log().Error("error method")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	contentType := r.Header.Get(model.HeaderContentType)
-	if contentType != model.ContentTypeJSON {
-		logger.Log().Error("error context type")
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	/*
+		contentType := r.Header.Get(model.HeaderContentType)
+		if contentType != model.ContentTypeJSON {
+			logger.Log().Error("error context type")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	*/
 
-	// Читаем тело запроса
-	var request []model.FullItem
-	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(&request); err != nil {
-		logger.Log().Error("error decoding request", zap.Error(err))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	/*
+		user, err := r.Cookie(model.CookieUser)
+		if err != nil {
+			if errors.Is(err, http.ErrNoCookie) {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	*/
 
-	logger.Log().Info("request", zap.Int("count", len(request)))
-	response, err := p.GetShortList(context.TODO(), request, getUser(r))
+	response, err := p.GetUserList(context.TODO(), getUser(r))
 	if err != nil {
 		logger.Log().Error("error getting short", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if len(response) == 0 {
+		logger.Log().Error("error getting short", zap.Error(err))
+		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
@@ -60,7 +76,7 @@ func (p *StorageServer) HandlerPostBatch(w http.ResponseWriter, r *http.Request)
 	logger.Log().Info("response", zap.String("data", string(jsonResponse)))
 
 	w.Header().Set(model.HeaderContentType, model.ContentTypeJSON)
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	w.Write(jsonResponse)
 
 }

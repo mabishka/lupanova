@@ -54,7 +54,7 @@ func checkFull(full string) error {
 	return nil
 }
 
-func (p *Server) GetShortList(ctx context.Context, fullList []model.FullItem) ([]model.ShortItem, error) {
+func (p *Server) GetShortList(ctx context.Context, fullList []model.FullItem, user string) ([]model.ShortItem, error) {
 	shortList := make([]model.ShortItem, 0, len(fullList))
 	storeList := make([]model.FullItem, 0, len(fullList))
 	for _, v := range fullList {
@@ -70,7 +70,7 @@ func (p *Server) GetShortList(ctx context.Context, fullList []model.FullItem) ([
 		storeList = append(storeList, v)
 	}
 
-	newList, err := p.loader.GetShortList(ctx, storeList)
+	newList, err := p.loader.GetShortList(ctx, storeList, user)
 
 	if newList != nil {
 		for _, v := range storeList {
@@ -86,7 +86,7 @@ func (p *Server) GetShortList(ctx context.Context, fullList []model.FullItem) ([
 	return shortList, err
 }
 
-func (p *Server) GetShort(ctx context.Context, full string) (string, error) {
+func (p *Server) GetShort(ctx context.Context, full string, user string) (string, error) {
 
 	logger.Log().Info("service.GetFull", zap.String("full", full))
 
@@ -99,7 +99,7 @@ func (p *Server) GetShort(ctx context.Context, full string) (string, error) {
 	}
 
 	// Значение не найдено в памяти. Берем его из хранилища и сохраняем в память
-	short, err := p.loader.GetShort(ctx, full)
+	short, err := p.loader.GetShort(ctx, full, user)
 	if err != nil {
 		return "", err
 	}
@@ -128,5 +128,10 @@ func (p *Server) GetFull(ctx context.Context, short string) (string, error) {
 
 	logger.Log().Info("service.GetFull return full", zap.String("short", short), zap.String("full", full))
 	return full, nil
+
+}
+
+func (s *Server) GetUserList(ctx context.Context, user string) ([]model.StoreItem, error) {
+	return s.loader.GetUserList(ctx, user)
 
 }

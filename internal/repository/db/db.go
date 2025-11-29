@@ -8,6 +8,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/mabishka/lupanova/internal/config"
 	"github.com/mabishka/lupanova/internal/logger"
+	"github.com/mabishka/lupanova/internal/model"
 	"github.com/mabishka/lupanova/pkg/utils"
 	"go.uber.org/zap"
 )
@@ -26,7 +27,8 @@ func Create(ctx context.Context, conn Connector) error {
     		s_short VARCHAR(100) NOT NULL
 		);
 		CREATE UNIQUE INDEX IF NOT EXISTS idx_data_full ON t_data(s_full);
-		CREATE UNIQUE INDEX IF NOT EXISTS idx_data_short ON t_data(s_short);`)
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_data_short ON t_data(s_short);
+		ALTER TABLE IF EXISTS t_data ADD COLUMN IF NOT EXISTS u_user uuid;`)
 
 	if err != nil {
 		logger.Log().Error("error", zap.Error(err))
@@ -100,7 +102,7 @@ func GetFull(ctx context.Context, conn Connector, short string) (string, error) 
 	return *full, nil
 }
 
-func GetShort(ctx context.Context, conn Connector, full string) (string, error) {
+func GetShort(ctx context.Context, conn Connector, full string, user string) (string, error) {
 	if short, err := getShort(ctx, conn, full); err == nil {
 		logger.Log().Info("GetShort from db ok", zap.String("full", full), zap.String("short", short))
 		return short, utils.ErrConflict
@@ -112,15 +114,40 @@ func GetShort(ctx context.Context, conn Connector, full string) (string, error) 
 		return "", err
 	}
 
-	if err := store(ctx, conn, full, short); err != nil {
+	if err := store(ctx, conn, full, short, user); err != nil {
 		logger.Log().Error("store to db error", zap.Error(err))
 		return "", err
 	}
 	return short, nil
 }
+func GetUser(ctx context.Context, conn Connector, user string) ([]model.StoreItem, error) {
+	rows, err := conn.QueryContext(ctx, "select s_full, s_short from t_data where u_user = $1", user)
+	if err != nil {
+		logger.Log().Error("error", zap.Error(err))
+		return nil, err
+	}
+	defer rows.Close()
 
-func store(ctx context.Context, conn Connector, full, short string) error {
-	_, err := conn.ExecContext(ctx, "insert into t_data(s_full, s_short) values($1, $2)", full, short)
+	resp := make([]model.StoreItem, 0)
+	var full, short string
+	for rows.Next() {
+		if err := rows.Scan(&full, &short); err != nil {
+			logger.Log().Error("error", zap.Error(err))
+			return nil, err
+		}
+		resp = append(resp, model.StoreItem{Full: full, Short: short})
+	}
+
+	if err = rows.Err(); err != nil {
+		logger.Log().Error("error", zap.Error(err))
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func store(ctx context.Context, conn Connector, full, short, user string) error {
+	_, err := conn.ExecContext(ctx, "insert into t_data(s_full, s_short, u_user) values($1, $2, $3)", full, short, user)
 	if err != nil {
 		logger.Log().Error("insert error", zap.Error(err))
 		return err

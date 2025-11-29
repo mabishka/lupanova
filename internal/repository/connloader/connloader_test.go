@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/mabishka/lupanova/internal/model"
 	"github.com/stretchr/testify/assert"
 )
@@ -93,7 +94,8 @@ func TestConnLoader_GetShort(t *testing.T) {
 
 	p := New("conn=a")
 	haveFull := "full"
-	haveShort, _ := p.GetShort(context.TODO(), haveFull)
+	user := uuid.New().String()
+	haveShort, _ := p.GetShort(context.TODO(), haveFull, user)
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
@@ -101,6 +103,7 @@ func TestConnLoader_GetShort(t *testing.T) {
 		// Named input parameters for target function.
 		full    string
 		short   string
+		user    string
 		wantErr bool
 	}{
 		{
@@ -114,7 +117,7 @@ func TestConnLoader_GetShort(t *testing.T) {
 
 			_, err := p.Load(context.TODO())
 			assert.Error(t, err)
-			short, gotErr := p.GetShort(context.TODO(), test.full)
+			short, gotErr := p.GetShort(context.TODO(), test.full, test.user)
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {
@@ -131,7 +134,8 @@ func TestConnLoader_StoreList(t *testing.T) {
 	p := New("conn=a")
 	haveCorr := "aaa"
 	haveFull := "full"
-	haveShort, _ := p.GetShort(context.TODO(), haveFull)
+	user := uuid.New().String()
+	haveShort, _ := p.GetShort(context.TODO(), haveFull, user)
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
@@ -139,6 +143,7 @@ func TestConnLoader_StoreList(t *testing.T) {
 		// Named input parameters for target function.
 		full    []model.FullItem
 		short   []model.ShortItem
+		user    string
 		wantErr bool
 	}{
 		{
@@ -152,7 +157,7 @@ func TestConnLoader_StoreList(t *testing.T) {
 			p := New("conn=a")
 			_, err := p.Load(context.TODO())
 			assert.Error(t, err)
-			short, gotErr := p.GetShortList(context.TODO(), test.full)
+			short, gotErr := p.GetShortList(context.TODO(), test.full, test.user)
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {

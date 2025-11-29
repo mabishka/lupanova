@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/mabishka/lupanova/pkg/utils"
 
 	"github.com/mabishka/lupanova/internal/model"
@@ -16,13 +17,15 @@ const defaultFileName = "../../../storage.json"
 
 func TestServer_GetFull(t *testing.T) {
 
-	full := "http://yandex.ru"
+	val, _ := utils.CreateShort(6)
+	full := "http://yandex.ru/" + val
 	server := New()
+	user := uuid.New().String()
 
 	loader := connloader.New("postgres://user:user@localhost:5433/practicum?sslmode=disable")
 	server.Load(context.TODO(), loader)
 
-	short, err := server.GetShort(context.TODO(), full)
+	short, err := server.GetShort(context.TODO(), full, user)
 	if err != nil {
 		t.Error(err)
 		return
@@ -66,13 +69,15 @@ func TestServer_GetFull(t *testing.T) {
 }
 
 func TestServer_GetShort(t *testing.T) {
-	full := "http://yandex.ru"
+	val, _ := utils.CreateShort(6)
+	full := "http://yandex.ru/" + val
 	server := New()
+	user := uuid.New().String()
 
 	loader := connloader.New("postgres://user:user@localhost:5433/practicum?sslmode=disable")
 	server.Load(context.TODO(), loader)
 
-	short, err := server.GetShort(context.TODO(), full)
+	short, err := server.GetShort(context.TODO(), full, user)
 	if err != nil {
 		t.Error(err)
 		return
@@ -82,6 +87,7 @@ func TestServer_GetShort(t *testing.T) {
 		name string // description of this test case
 		// Named input parameters for target function.
 		full string
+		user string
 		want string
 	}{
 		{
@@ -92,7 +98,7 @@ func TestServer_GetShort(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := server.GetShort(context.TODO(), test.full)
+			got, err := server.GetShort(context.TODO(), test.full, test.user)
 			assert.Error(t, err)
 			assert.Equal(t, err, utils.ErrConflict)
 			assert.Equal(t, test.want, got, "full")
@@ -105,6 +111,7 @@ func TestServer_GetShortList(t *testing.T) {
 		name string // description of this test case
 		// Named input parameters for target function.
 		fullList []model.FullItem
+		user     string
 		wantErr  bool
 	}{
 		{
@@ -115,7 +122,7 @@ func TestServer_GetShortList(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			p := New()
-			got, err := p.GetShortList(context.Background(), test.fullList)
+			got, err := p.GetShortList(context.Background(), test.fullList, test.user)
 			if test.wantErr {
 				assert.Error(t, err)
 			} else {
