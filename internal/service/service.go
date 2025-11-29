@@ -131,7 +131,7 @@ func (p *Server) GetFull(ctx context.Context, short string) (string, error) {
 
 }
 
-func (s *Server) GetUserList(ctx context.Context, user string) ([]model.StoreItem, error) {
-	return s.loader.GetUserList(ctx, user)
+func (p *Server) GetUserList(ctx context.Context, user string) ([]model.StoreItem, error) {
+	return p.loader.GetUserList(ctx, user)
 
 }
