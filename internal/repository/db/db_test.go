@@ -242,3 +242,33 @@ func TestGetUser(t *testing.T) {
 		})
 	}
 }
+
+func TestDelete(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		conn    Connector
+		short   []string
+		user    string
+		wantErr bool
+	}{
+		{
+			conn:    &mock{},
+			wantErr: false,
+		},
+		{
+			conn:    &mockErr{},
+			wantErr: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			gotErr := Delete(context.Background(), test.conn, test.short, test.user)
+			if test.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.NoError(t, gotErr)
+			}
+		})
+	}
+}

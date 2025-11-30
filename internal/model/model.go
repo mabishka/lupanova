@@ -1,5 +1,7 @@
 package model
 
+import "errors"
+
 const (
 	HeaderContentType     = "Content-Type"
 	HeaderContentEncoding = "Content-Encoding"
@@ -15,6 +17,8 @@ const (
 
 	ContextValueUser = "User"
 )
+
+var ErrorDeleted = errors.New("item deleted")
 
 type Request struct {
 	Full string `json:"url"`

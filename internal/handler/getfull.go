@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -32,6 +33,11 @@ func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
 
 	full, err := p.GetFull(context.TODO(), id)
 	if err != nil {
+		if errors.Is(err, model.ErrorDeleted) {
+			logger.Log().Error("error getting full (is deleted)", zap.Error(err))
+			w.WriteHeader(http.StatusGone)
+			return
+		}
 		logger.Log().Error("error getting full", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return

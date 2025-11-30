@@ -10,6 +10,7 @@ type StorageLoader interface {
 	GetShort(ctx context.Context, full string, user string) (string, error)
 	GetFull(ctx context.Context, short string) (string, error)
 	GetUserList(ctx context.Context, user string) ([]StoreItem, error)
+	DeleteList(context.Context, []string, string) error
 }
 
 type ConnLoader interface {
@@ -22,6 +23,7 @@ type Storage interface {
 	GetShortList(ctx context.Context, full []FullItem, user string) ([]ShortItem, error)
 	GetShort(ctx context.Context, full string, user string) (string, error)
 	GetFull(ctx context.Context, short string) (string, error)
+	DeleteList(ctx context.Context, short []string, user string) error
 
 	Load(ctx context.Context, loader StorageLoader) error
 }

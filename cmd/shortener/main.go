@@ -84,6 +84,7 @@ func run(ctx context.Context) {
 	router.Get("/{id}", server.HandlerGetFull)
 	router.Get("/ping", connServer.HandlerGetPing)
 	router.Get("/api/user/urls", server.HandlerGetUser)
+	router.Delete("/api/user/urls", server.HandlerDelete)
 
 	go func() {
 		if err := http.ListenAndServe(config.GetServerAddress(), router); err != nil {
