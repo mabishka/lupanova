@@ -2,11 +2,33 @@ package connloader
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/mabishka/lupanova/internal/model"
 	"github.com/stretchr/testify/assert"
 )
+
+type mock struct {
+}
+
+func (p *mock) QueryContext(context.Context, string, ...any) (*sql.Rows, error) {
+	return nil, errors.New("unsupported")
+}
+
+func (p *mock) ExecContext(context.Context, string, ...any) (sql.Result, error) {
+	return nil, nil
+}
+
+func (p *mock) PingContext(context.Context) error {
+	return nil
+}
+
+func (p *mock) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
+	return nil, errors.New("unsupported")
+}
 
 func TestConnLoader_Ping(t *testing.T) {
 	tests := []struct {
@@ -91,9 +113,10 @@ func TestConnLoader_Load(t *testing.T) {
 
 func TestConnLoader_GetShort(t *testing.T) {
 
-	p := New("conn=a")
+	p := ConnLoader{conn: &mock{}}
 	haveFull := "full"
-	haveShort, _ := p.GetShort(context.TODO(), haveFull)
+	user := uuid.New().String()
+	haveShort, _ := p.GetShort(context.TODO(), haveFull, user)
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
@@ -101,6 +124,7 @@ func TestConnLoader_GetShort(t *testing.T) {
 		// Named input parameters for target function.
 		full    string
 		short   string
+		user    string
 		wantErr bool
 	}{
 		{
@@ -111,10 +135,7 @@ func TestConnLoader_GetShort(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
-			_, err := p.Load(context.TODO())
-			assert.Error(t, err)
-			short, gotErr := p.GetShort(context.TODO(), test.full)
+			short, gotErr := p.GetShort(context.TODO(), test.full, test.user)
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {
@@ -128,10 +149,11 @@ func TestConnLoader_GetShort(t *testing.T) {
 
 func TestConnLoader_StoreList(t *testing.T) {
 
-	p := New("conn=a")
+	p := ConnLoader{conn: &mock{}}
 	haveCorr := "aaa"
 	haveFull := "full"
-	haveShort, _ := p.GetShort(context.TODO(), haveFull)
+	user := uuid.New().String()
+	haveShort, _ := p.GetShort(context.TODO(), haveFull, user)
 	tests := []struct {
 		name string // description of this test case
 		// Named input parameters for receiver constructor.
@@ -139,6 +161,7 @@ func TestConnLoader_StoreList(t *testing.T) {
 		// Named input parameters for target function.
 		full    []model.FullItem
 		short   []model.ShortItem
+		user    string
 		wantErr bool
 	}{
 		{
@@ -149,10 +172,132 @@ func TestConnLoader_StoreList(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p := New("conn=a")
-			_, err := p.Load(context.TODO())
-			assert.Error(t, err)
-			short, gotErr := p.GetShortList(context.TODO(), test.full)
+			short, gotErr := p.GetShortList(context.TODO(), test.full, test.user)
+			if test.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				if assert.NoError(t, gotErr) {
+					assert.Equal(t, short, test.short)
+				}
+			}
+		})
+	}
+}
+
+func TestConnLoader_GetUserList(t *testing.T) {
+	p := ConnLoader{conn: &mock{}}
+	user := uuid.New().String()
+	tests := []struct {
+		name    string // description of this test case
+		user    string
+		wantErr bool
+	}{
+		{
+			user:    user,
+			wantErr: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			list, gotErr := p.GetUserList(context.Background(), test.user)
+			if test.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.NoError(t, gotErr)
+				assert.Equal(t, 0, len(list))
+			}
+		})
+	}
+}
+
+func TestConnLoader_deleteList(t *testing.T) {
+	p := ConnLoader{conn: &mock{}}
+	user := uuid.New().String()
+	haveFull := "full"
+	haveShort, _ := p.GetShort(context.TODO(), haveFull, user)
+
+	chShort := make(chan string, 1)
+	chShort <- haveShort
+	close(chShort)
+	tests := []struct {
+		name    string // description of this test case
+		short   chan string
+		user    string
+		wantErr bool
+	}{
+		{
+			short:   chShort,
+			user:    user,
+			wantErr: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			gotErr := p.deleteList(context.Background(), test.short, test.user)
+			if test.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.NoError(t, gotErr)
+			}
+		})
+	}
+}
+
+func TestConnLoader_DeleteList(t *testing.T) {
+	p := ConnLoader{conn: &mock{}}
+	user := uuid.New().String()
+	haveFull := "full"
+	haveShort, _ := p.GetShort(context.TODO(), haveFull, user)
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for receiver constructor.
+		addr string
+		// Named input parameters for target function.
+		short   []string
+		user    string
+		wantErr bool
+	}{
+		{
+			short:   []string{haveShort},
+			wantErr: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			gotErr := p.DeleteList(context.Background(), test.short, test.user)
+			if test.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.NoError(t, gotErr)
+			}
+		})
+	}
+}
+
+func TestConnLoader_GetFull(t *testing.T) {
+	p := ConnLoader{conn: &mock{}}
+	haveFull := "full"
+	user := uuid.New().String()
+	haveShort, _ := p.GetShort(context.TODO(), haveFull, user)
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for receiver constructor.
+		addr string
+		// Named input parameters for target function.
+		full    string
+		short   string
+		user    string
+		wantErr bool
+	}{
+		{
+			full:    haveFull,
+			short:   haveShort,
+			wantErr: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			short, gotErr := p.GetShort(context.TODO(), test.full, test.user)
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {

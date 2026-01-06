@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 
+	"github.com/mabishka/lupanova/internal/auth"
 	"github.com/mabishka/lupanova/internal/compress"
 	"github.com/mabishka/lupanova/internal/config"
 	"github.com/mabishka/lupanova/internal/handler"
@@ -75,12 +76,15 @@ func run(ctx context.Context) {
 
 	router.Use(logger.WithLogging)
 	router.Use(compress.WithCompress)
+	router.Use(auth.WithAuth)
 
 	router.Post("/", server.HandlerPostFull)
 	router.Post("/api/shorten", server.HandlerPostFullJSON)
 	router.Post("/api/shorten/batch", server.HandlerPostBatch)
 	router.Get("/{id}", server.HandlerGetFull)
 	router.Get("/ping", connServer.HandlerGetPing)
+	router.Get("/api/user/urls", server.HandlerGetUser)
+	router.Delete("/api/user/urls", server.HandlerDelete)
 
 	go func() {
 		if err := http.ListenAndServe(config.GetServerAddress(), router); err != nil {

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -55,7 +56,7 @@ func (p *FileLoader) Load(ctx context.Context) (map[string]string, error) {
 	return response, nil
 }
 
-func (p *FileLoader) GetShortList(ctx context.Context, fullList []model.FullItem) (map[string]string, error) {
+func (p *FileLoader) GetShortList(ctx context.Context, fullList []model.FullItem, user string) (map[string]string, error) {
 	if err := p.create(); err != nil {
 		return nil, err
 	}
@@ -80,7 +81,7 @@ func (p *FileLoader) GetShortList(ctx context.Context, fullList []model.FullItem
 	storeList := make(map[string]string)
 	for _, v := range fullList {
 
-		short, n, err := p.writeItem(buffer, v.Full)
+		short, n, err := p.writeItem(buffer, v.Full, user)
 		if err != nil {
 			return nil, err
 		}
@@ -97,7 +98,7 @@ func (p *FileLoader) GetShortList(ctx context.Context, fullList []model.FullItem
 	return storeList, nil
 }
 
-func (p *FileLoader) GetShort(ctx context.Context, full string) (string, error) {
+func (p *FileLoader) GetShort(ctx context.Context, full string, user string) (string, error) {
 
 	if err := p.create(); err != nil {
 		return "", err
@@ -119,7 +120,7 @@ func (p *FileLoader) GetShort(ctx context.Context, full string) (string, error) 
 
 	buffer := bufio.NewWriter(file)
 
-	short, n, err := p.writeItem(buffer, full)
+	short, n, err := p.writeItem(buffer, full, user)
 	if err != nil {
 		return "", err
 	}
@@ -136,6 +137,11 @@ func (p *FileLoader) GetFull(ctx context.Context, short string) (string, error) 
 	err := fmt.Errorf("full not found for short %s", short)
 	logger.Log().Error("error", zap.Error(err))
 	return "", fmt.Errorf("full not found for short %s", short)
+}
+
+func (p *FileLoader) GetUserList(ctx context.Context, user string) ([]model.StoreItem, error) {
+	return nil, errors.New("unsupport")
+
 }
 
 func (p *FileLoader) preSave(file *os.File) error {
@@ -159,7 +165,7 @@ func (p *FileLoader) postSave(file *os.File) {
 	p.fileSize += int64(n)
 }
 
-func (p *FileLoader) writeItem(buffer *bufio.Writer, full string) (string, int, error) {
+func (p *FileLoader) writeItem(buffer *bufio.Writer, full string, user string) (string, int, error) {
 	short, err := utils.CreateShort(config.ShortLen)
 	if err != nil {
 		logger.Log().Error("error", zap.Error(err))
@@ -239,4 +245,8 @@ func (p *FileLoader) exist() (bool, error) {
 	p.fileSize = stat.Size()
 
 	return p.fileSize != 0, nil
+}
+
+func (p *FileLoader) DeleteList(context.Context, []string, string) error {
+	return errors.New("unsupport")
 }

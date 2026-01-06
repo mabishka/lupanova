@@ -49,8 +49,13 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	short, shorterr := p.GetShort(context.TODO(), full)
+	short, shorterr := p.GetShort(context.TODO(), full, getUser(r))
 	if shorterr != nil && !errors.Is(shorterr, utils.ErrConflict) {
+		if errors.Is(shorterr, model.ErrorDeleted) {
+			logger.Log().Error("error getting short", zap.Error(err))
+			w.WriteHeader(http.StatusGone)
+			return
+		}
 		logger.Log().Error("error getting short", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return

@@ -118,6 +118,7 @@ func TestFileLoader_GetShort(t *testing.T) {
 		// Named input parameters for target function.
 		full    string
 		short   string
+		user    string
 		wantErr bool
 	}{
 		{
@@ -128,7 +129,7 @@ func TestFileLoader_GetShort(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			short, gotErr := p.GetShort(context.TODO(), test.full)
+			short, gotErr := p.GetShort(context.TODO(), test.full, test.user)
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {
@@ -158,6 +159,7 @@ func TestFileLoader_GetShortList(t *testing.T) {
 		// Named input parameters for receiver constructor.
 		// Named input parameters for target function.
 		full    []model.FullItem
+		user    string
 		short   map[string]string
 		wantErr bool
 	}{
@@ -169,7 +171,7 @@ func TestFileLoader_GetShortList(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			short, gotErr := p.GetShortList(context.TODO(), test.full)
+			short, gotErr := p.GetShortList(context.TODO(), test.full, test.user)
 			if test.wantErr {
 				assert.Error(t, gotErr)
 			} else {

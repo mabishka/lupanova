@@ -11,10 +11,10 @@ import (
 )
 
 // Эндпоинт /api/shorten/batch, принимающий в теле запроса множество URL для сокращения в формате json
-func (p *StorageServer) HandlerPostBatch(w http.ResponseWriter, r *http.Request) {
+func (p *StorageServer) HandlerDelete(w http.ResponseWriter, r *http.Request) {
 
-	logger.Log().Info("HandlerPostBatch")
-	if r.Method != http.MethodPost {
+	logger.Log().Info("HandlerDelete")
+	if r.Method != http.MethodDelete {
 		logger.Log().Error("error method")
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -28,7 +28,7 @@ func (p *StorageServer) HandlerPostBatch(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Читаем тело запроса
-	var request []model.FullItem
+	var request []string
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&request); err != nil {
 		logger.Log().Error("error decoding request", zap.Error(err))
@@ -37,30 +37,15 @@ func (p *StorageServer) HandlerPostBatch(w http.ResponseWriter, r *http.Request)
 	}
 
 	logger.Log().Info("request", zap.Int("count", len(request)))
-	response, err := p.GetShortList(context.TODO(), request, getUser(r))
-	if err != nil {
-		logger.Log().Error("error getting short", zap.Error(err))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	logger.Log().Info("response", zap.Int("count", len(response)))
-
-	for k, v := range response {
-		response[k].Short = p.format(v.Short)
-	}
-
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		logger.Log().Error("Error marshal JSON response = ", zap.Error(err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	logger.Log().Info("response", zap.String("data", string(jsonResponse)))
+	go func() {
+		if err := p.DeleteList(context.TODO(), request, getUser(r)); err != nil {
+			logger.Log().Error("error getting short", zap.Error(err))
+			// w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	}()
 
 	w.Header().Set(model.HeaderContentType, model.ContentTypeJSON)
-	w.WriteHeader(http.StatusCreated)
-	w.Write(jsonResponse)
+	w.WriteHeader(http.StatusAccepted)
 
 }

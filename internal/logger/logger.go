@@ -10,13 +10,9 @@ import (
 
 var log *zap.Logger = zap.NewNop()
 
-
-
 func Log() *zap.Logger {
 	return log
 }
-
-
 
 func InitLogger(level string) error {
 	// преобразуем текстовый уровень логирования в zap.AtomicLevel
