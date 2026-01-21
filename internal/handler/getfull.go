@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
@@ -31,7 +30,8 @@ func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	full, err := p.GetFull(context.TODO(), id)
+	user := getUser(r)
+	full, err := p.GetFull(r.Context(), id)
 	if err != nil {
 		if errors.Is(err, model.ErrorDeleted) {
 			logger.Log().Error("error getting full (is deleted)", zap.Error(err))
@@ -45,4 +45,6 @@ func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(model.HeaderLocation, full)
 	w.WriteHeader(http.StatusTemporaryRedirect)
+
+	p.sendAudit(r.Context(), model.ActionFollow, user, full)
 }

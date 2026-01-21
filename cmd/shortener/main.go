@@ -14,6 +14,7 @@ import (
 	"github.com/mabishka/lupanova/internal/handler"
 	"github.com/mabishka/lupanova/internal/logger"
 	"github.com/mabishka/lupanova/internal/model"
+	"github.com/mabishka/lupanova/internal/repository/audit"
 	"github.com/mabishka/lupanova/internal/repository/connloader"
 	"github.com/mabishka/lupanova/internal/repository/fileloader"
 )
@@ -71,6 +72,18 @@ func run(ctx context.Context) {
 	}
 
 	connServer := handler.NewConn(conn)
+
+	auditEvent := audit.NewAuditEvent()
+
+	if config.GetAuditFile() != "" {
+		auditEvent.Register(audit.NewFileObserver(config.GetAuditFile()))
+	}
+
+	if config.GetAuditAddress() != "" {
+		auditEvent.Register(audit.NewFileObserver(config.GetAuditFile()))
+	}
+
+	server.SetAudit(auditEvent)
 
 	router := chi.NewRouter()
 
