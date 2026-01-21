@@ -55,7 +55,7 @@ type StoreItem struct {
 */
 
 type AuditData struct {
-	Ts      int64  `json:"ts"`
+	Created int64  `json:"ts"`
 	Action  string `json:"action"`
 	User    string `json:"user_id"`
 	Address string `json:"url"`

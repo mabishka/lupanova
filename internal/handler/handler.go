@@ -43,7 +43,7 @@ func (p *StorageServer) sendAudit(ctx context.Context, action, user, address str
 	}
 
 	p.audit.Send(ctx, &model.AuditData{
-		Ts:      time.Now().Unix(),
+		Created: time.Now().Unix(),
 		Action:  action,
 		User:    user,
 		Address: address,
