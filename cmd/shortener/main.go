@@ -11,8 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 
 	"github.com/mabishka/lupanova/internal/auth"
@@ -29,7 +29,6 @@ import (
 const stopTimeout = 5 * time.Second
 
 func main() {
-
 	if err := new(context.WithCancelCause(context.Background())); err != nil {
 		log.Fatalf("exist with error: %v", err)
 	}
