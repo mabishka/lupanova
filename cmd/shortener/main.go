@@ -92,7 +92,7 @@ func new(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 
 	server.SetAudit(auditEvent)
 
-	router := ServerMux() chi.NewRouter()
+	router := chi.NewRouter()
 
 	router.Use(logger.WithLogging)
 	router.Use(compress.WithCompress)
