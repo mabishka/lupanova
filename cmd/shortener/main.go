@@ -27,12 +27,6 @@ import (
 const stopTimeout = 5 * time.Second
 
 func main() {
-	/*
-		ctx, fnCancel := context.WithCancelCause(context.Background())
-		defer fnCancel(errors.New("exit"))
-		run(ctx)
-	*/
-
 	if err := new(context.WithCancelCause(context.Background())); err != nil {
 		log.Fatalf("exist with error: %v", err)
 	}
@@ -98,7 +92,7 @@ func new(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 
 	server.SetAudit(auditEvent)
 
-	router := chi.NewRouter()
+	router := ServerMux() chi.NewRouter()
 
 	router.Use(logger.WithLogging)
 	router.Use(compress.WithCompress)
@@ -109,8 +103,9 @@ func new(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 	router.Post("/api/shorten/batch", server.HandlerPostBatch)
 	router.Get("/{id}", server.HandlerGetFull)
 	router.Get("/ping", connServer.HandlerGetPing)
-	router.Get("/api/user/urls", server.HandlerGetUser)
 	router.Delete("/api/user/urls", server.HandlerDelete)
+	router.Get("/api/user/urls", server.HandlerGetUser)
+	
 
 	if err := run(ctx, &http.Server{
 		Addr:         config.GetServerAddress(),
@@ -125,19 +120,6 @@ func new(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 	fnCancel(nil)
 
 	return nil
-
-	/*
-		go func() {
-			if err := http.ListenAndServe(config.GetServerAddress(), router); err != nil {
-				panic(err)
-			}
-		}()
-
-		logger.Log().Info("listen port", zap.String("serverAddress", config.GetServerAddress()))
-
-		<-ctx.Done()
-		logger.Log().Info("exit")
-	*/
 }
 
 func run(ctx context.Context, srv *http.Server) error {
