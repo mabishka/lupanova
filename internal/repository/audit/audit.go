@@ -47,4 +47,3 @@ func (p *AuditEvent) Send(ctx context.Context, data *model.AuditData) error {
 
 	return wg.Wait()
 }
-
