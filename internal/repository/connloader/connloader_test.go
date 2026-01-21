@@ -216,17 +216,15 @@ func TestConnLoader_deleteList(t *testing.T) {
 	haveFull := "full"
 	haveShort, _ := p.GetShort(context.TODO(), haveFull, user)
 
-	chShort := make(chan string, 1)
-	chShort <- haveShort
-	close(chShort)
+	dataShort := []string{haveShort}
 	tests := []struct {
 		name    string // description of this test case
-		short   chan string
+		short   []string
 		user    string
 		wantErr bool
 	}{
 		{
-			short:   chShort,
+			short:   dataShort,
 			user:    user,
 			wantErr: false,
 		},

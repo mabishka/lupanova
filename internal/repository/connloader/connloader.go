@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"sync"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/mabishka/lupanova/internal/logger"
@@ -149,39 +148,44 @@ func (p *ConnLoader) GetUserList(ctx context.Context, user string) ([]model.Stor
 	return db.GetUser(ctx, p.conn, user)
 }
 
-func (p *ConnLoader) deleteList(ctx context.Context, short chan string, user string) error {
+func (p *ConnLoader) deleteList(ctx context.Context, short []string, user string) error {
 	if err := p.Ping(ctx); err != nil {
 		logger.Log().Error("error", zap.Error(err))
 		return err
 	}
 
-	shortList := make([]string, 0)
-	for v := range short {
-		shortList = append(shortList, v)
-	}
-	return db.Delete(ctx, p.conn, shortList, user)
+	/*
+		shortList := make([]string, 0)
+		for v := range short {
+			shortList = append(shortList, v)
+		}
+	*/
+	return db.Delete(ctx, p.conn, short, user)
 }
 
 func (p *ConnLoader) DeleteList(ctx context.Context, short []string, user string) error {
+	return p.deleteList(ctx, short, user)
 
-	chShort := make(chan string, len(short))
-	defer close(chShort)
+	/*
+		chShort := make(chan string, len(short))
+		defer close(chShort)
 
-	go p.deleteList(ctx, chShort, user)
+		go p.deleteList(ctx, chShort, user)
 
-	var wg sync.WaitGroup
-	for _, v := range short {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			select {
-			case chShort <- v:
-				return
-			case <-ctx.Done():
-				return
-			}
-		}()
-	}
-	wg.Wait()
-	return nil
+		var wg sync.WaitGroup
+		for _, v := range short {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				select {
+				case chShort <- v:
+					return
+				case <-ctx.Done():
+					return
+				}
+			}()
+		}
+		wg.Wait()
+		return nil
+	*/
 }

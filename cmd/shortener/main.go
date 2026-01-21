@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 
@@ -27,6 +29,7 @@ import (
 const stopTimeout = 5 * time.Second
 
 func main() {
+
 	if err := new(context.WithCancelCause(context.Background())); err != nil {
 		log.Fatalf("exist with error: %v", err)
 	}
@@ -98,6 +101,8 @@ func new(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 	router.Use(compress.WithCompress)
 	router.Use(auth.WithAuth)
 
+	router.Mount("/debug", middleware.Profiler())
+
 	router.Post("/", server.HandlerPostFull)
 	router.Post("/api/shorten", server.HandlerPostFullJSON)
 	router.Post("/api/shorten/batch", server.HandlerPostBatch)
@@ -105,7 +110,6 @@ func new(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 	router.Get("/ping", connServer.HandlerGetPing)
 	router.Delete("/api/user/urls", server.HandlerDelete)
 	router.Get("/api/user/urls", server.HandlerGetUser)
-	
 
 	if err := run(ctx, &http.Server{
 		Addr:         config.GetServerAddress(),
