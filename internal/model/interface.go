@@ -27,7 +27,3 @@ type Storage interface {
 
 	Load(ctx context.Context, loader StorageLoader) error
 }
-
-type Audit interface {
-	Send(context.Context, *AuditData) error
-}

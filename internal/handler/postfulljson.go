@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -49,8 +50,7 @@ func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	user := getUser(r)
-	short, shorterr := p.GetShort(r.Context(), full, user)
+	short, shorterr := p.GetShort(context.TODO(), full, getUser(r))
 	if shorterr != nil && !errors.Is(shorterr, utils.ErrConflict) {
 		logger.Log().Error("error getting short", zap.Error(shorterr))
 		w.WriteHeader(http.StatusBadRequest)
@@ -76,5 +76,4 @@ func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(http.StatusCreated)
 	}
 	w.Write(enc)
-	p.sendAudit(r.Context(), model.ActionShorten, user, full)
 }

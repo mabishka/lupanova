@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -48,8 +49,7 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	user := getUser(r)
-	short, shorterr := p.GetShort(r.Context(), full, user)
+	short, shorterr := p.GetShort(context.TODO(), full, getUser(r))
 	if shorterr != nil && !errors.Is(shorterr, utils.ErrConflict) {
 		if errors.Is(shorterr, model.ErrorDeleted) {
 			logger.Log().Error("error getting short", zap.Error(err))
@@ -68,6 +68,4 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(http.StatusCreated)
 	}
 	w.Write([]byte(p.format(short)))
-
-	p.sendAudit(r.Context(), model.ActionShorten, user, full)
 }

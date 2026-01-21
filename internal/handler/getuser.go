@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -46,7 +47,7 @@ func (p *StorageServer) HandlerGetUser(w http.ResponseWriter, r *http.Request) {
 		}
 	*/
 
-	response, err := p.GetUserList(r.Context(), getUser(r))
+	response, err := p.GetUserList(context.TODO(), getUser(r))
 	if err != nil {
 		logger.Log().Error("error getting short", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
