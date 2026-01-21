@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/mabishka/lupanova/internal/logger"
@@ -26,7 +25,7 @@ func (p *ConnServer) HandlerGetPing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := p.Ping(context.TODO()); err != nil {
+	if err := p.Ping(r.Context()); err != nil {
 		logger.Log().Error("error ping", zap.Error(err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
