@@ -2,8 +2,13 @@ package main
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
@@ -19,13 +24,21 @@ import (
 	"github.com/mabishka/lupanova/internal/repository/fileloader"
 )
 
+const stopTimeout = 5 * time.Second
+
 func main() {
-	ctx, fnCancel := context.WithCancelCause(context.Background())
-	defer fnCancel(errors.New("exit"))
-	run(ctx)
+	/*
+		ctx, fnCancel := context.WithCancelCause(context.Background())
+		defer fnCancel(errors.New("exit"))
+		run(ctx)
+	*/
+
+	if err := new(context.WithCancelCause(context.Background())); err != nil {
+		log.Fatalf("exist with error: %v", err)
+	}
 }
 
-func run(ctx context.Context) {
+func new(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 
 	config := config.New()
 	if err := logger.InitLogger(config.GetLogLevel()); err != nil {
@@ -99,14 +112,59 @@ func run(ctx context.Context) {
 	router.Get("/api/user/urls", server.HandlerGetUser)
 	router.Delete("/api/user/urls", server.HandlerDelete)
 
+	if err := run(ctx, &http.Server{
+		Addr:         config.GetServerAddress(),
+		Handler:      router,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}); err != nil {
+		fnCancel(err)
+		return err
+	}
+	fnCancel(nil)
+
+	return nil
+
+	/*
+		go func() {
+			if err := http.ListenAndServe(config.GetServerAddress(), router); err != nil {
+				panic(err)
+			}
+		}()
+
+		logger.Log().Info("listen port", zap.String("serverAddress", config.GetServerAddress()))
+
+		<-ctx.Done()
+		logger.Log().Info("exit")
+	*/
+}
+
+func run(ctx context.Context, srv *http.Server) error {
+
 	go func() {
-		if err := http.ListenAndServe(config.GetServerAddress(), router); err != nil {
-			panic(err)
+		sigint := make(chan os.Signal, 1)
+		signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+		select {
+		case s := <-sigint:
+			logger.Log().Info("stop with signal", zap.String("signal", s.String()))
+		case <-ctx.Done():
+			logger.Log().Info("stop with context", zap.Error(context.Cause(ctx)))
+		}
+
+		stopCtx, cancel := context.WithTimeoutCause(context.Background(), stopTimeout, fmt.Errorf("server Shutdown with timeout %v", stopTimeout))
+		defer cancel()
+		if err := srv.Shutdown(stopCtx); err != nil {
+			logger.Log().Info("HTTP server shutdown", zap.Error(err))
 		}
 	}()
 
-	logger.Log().Info("listen port", zap.String("serverAddress", config.GetServerAddress()))
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		logger.Log().Info("HTTP server ListenAndServe", zap.Error(err))
+		return err
+	}
 
-	<-ctx.Done()
 	logger.Log().Info("exit")
+	return nil
 }
