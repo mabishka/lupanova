@@ -6,6 +6,7 @@ import (
 	"errors"
 )
 
+// CreateShort формирование рандомной строки длиной n.
 func CreateShort(n int) (string, error) {
 	b := make([]byte, n)
 	_, err := rand.Read(b)
@@ -15,4 +16,8 @@ func CreateShort(n int) (string, error) {
 	return base64.URLEncoding.EncodeToString(b)[:n], nil
 }
 
+// ErrConflict ошибка
 var ErrConflict = errors.New("already exist")
+
+// Ошибка удаленного значения.
+var ErrorDeleted = errors.New("item deleted")

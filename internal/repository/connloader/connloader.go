@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Connector интерфейс подключения к БД.
 type Connector interface {
 	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
 	ExecContext(context.Context, string, ...any) (sql.Result, error)
@@ -21,16 +22,19 @@ type Connector interface {
 	BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error)
 }
 
+// ConnLoader хранилище БД.
 type ConnLoader struct {
 	conn Connector
 	addr string
 }
 
+// New создание хранилища БД.
 func New(addr string) *ConnLoader {
 	return &ConnLoader{addr: addr}
 
 }
 
+// Создание соединения с БД.
 func (p *ConnLoader) Create(ctx context.Context) error {
 
 	db, err := sql.Open("pgx", p.addr)
@@ -50,6 +54,7 @@ func (p *ConnLoader) Create(ctx context.Context) error {
 	return nil
 }
 
+// Ping проверка соединения с БД.
 func (p *ConnLoader) Ping(ctx context.Context) error {
 
 	if p.conn == nil {
@@ -61,6 +66,7 @@ func (p *ConnLoader) Ping(ctx context.Context) error {
 	return p.conn.PingContext(ctx)
 }
 
+// Load загрузка адресов из БД.
 func (p *ConnLoader) Load(ctx context.Context) (map[string]string, error) {
 
 	if err := p.Ping(ctx); err != nil {
@@ -76,6 +82,7 @@ func (p *ConnLoader) Load(ctx context.Context) (map[string]string, error) {
 	return db.LoadList(ctx, p.conn)
 }
 
+// GetShortList получение списка сокращенных адресов.
 func (p *ConnLoader) GetShortList(ctx context.Context, fullList []model.FullItem, user string) (map[string]string, error) {
 
 	if err := p.Ping(ctx); err != nil {
@@ -106,6 +113,7 @@ func (p *ConnLoader) GetShortList(ctx context.Context, fullList []model.FullItem
 	return shortList, tx.Commit()
 }
 
+// GetShort получение сокращенного адреса по полному.
 func (p *ConnLoader) GetShort(ctx context.Context, full string, user string) (string, error) {
 
 	if err := p.Ping(ctx); err != nil {
@@ -129,6 +137,7 @@ func (p *ConnLoader) GetShort(ctx context.Context, full string, user string) (st
 	return short, tx.Commit()
 }
 
+// GetFull получение полного адреса по сокращенному.
 func (p *ConnLoader) GetFull(ctx context.Context, short string) (string, error) {
 
 	if err := p.Ping(ctx); err != nil {
@@ -139,6 +148,7 @@ func (p *ConnLoader) GetFull(ctx context.Context, short string) (string, error) 
 	return db.GetFull(ctx, p.conn, short)
 }
 
+// GetUserList получение списка сокращенных адресов, созданных пользователем user.
 func (p *ConnLoader) GetUserList(ctx context.Context, user string) ([]model.StoreItem, error) {
 	if err := p.Ping(ctx); err != nil {
 		logger.Log().Error("error", zap.Error(err))
@@ -154,38 +164,10 @@ func (p *ConnLoader) deleteList(ctx context.Context, short []string, user string
 		return err
 	}
 
-	/*
-		shortList := make([]string, 0)
-		for v := range short {
-			shortList = append(shortList, v)
-		}
-	*/
 	return db.Delete(ctx, p.conn, short, user)
 }
 
+// DeleteList удаление списка сокращенных адресов.
 func (p *ConnLoader) DeleteList(ctx context.Context, short []string, user string) error {
 	return p.deleteList(ctx, short, user)
-
-	/*
-		chShort := make(chan string, len(short))
-		defer close(chShort)
-
-		go p.deleteList(ctx, chShort, user)
-
-		var wg sync.WaitGroup
-		for _, v := range short {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				select {
-				case chShort <- v:
-					return
-				case <-ctx.Done():
-					return
-				}
-			}()
-		}
-		wg.Wait()
-		return nil
-	*/
 }

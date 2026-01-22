@@ -13,6 +13,7 @@ import (
 // Флаг -l отвечает за уровень логирования (значение по умолчанию: "Info")
 // Флаг -f путь до файла, куда сохраняются данные в формате JSON (значение по умолчанию "./storage.json")
 
+// ShortLen длина сокращенного кода.
 const ShortLen = 6
 
 const (
@@ -52,6 +53,7 @@ const (
 	descAuditAddress    = "полный URL удаленного сервера-приёмника, куда отправляются логи аудита"
 )
 
+// DefaultConfig дефолтовый конфиг для тестов.
 var DefaultConfig = &Config{
 	serverAddress: defaultServerAddress,
 	baseAddress:   defaultBaseAddress,
@@ -60,6 +62,7 @@ var DefaultConfig = &Config{
 	connAddress:   defaultConnAddress,
 }
 
+// Config структура для хранения конфига.
 type Config struct {
 	serverAddress string
 	baseAddress   string
@@ -70,6 +73,7 @@ type Config struct {
 	auditAddress  string
 }
 
+// New создает и инициализирует структуру с конфигурацией.
 func New() *Config {
 
 	serverAddress := setAddress(envServerAddress, flagServerAddress, defaultServerAddress, descServerAddress)
@@ -126,30 +130,37 @@ func validateBaseAddress(address, defaultAddress string) string {
 	return u.String()
 }
 
+// GetBaseAddress за адрес запуска HTTP-сервера.
 func (c *Config) GetBaseAddress() string {
 	return c.baseAddress
 }
 
+// GetServerAddress базовый адрес результирующего сокращённого URL.
 func (c *Config) GetServerAddress() string {
 	return c.serverAddress
 }
 
+// GetLogLevel уровень логирования.
 func (c *Config) GetLogLevel() string {
 	return c.logLevel
 }
 
+// GetFileName путь до файла, куда сохраняются данные в формате JSON.
 func (c *Config) GetFileName() string {
 	return c.fileName
 }
 
+// GetConnAddress адрес подключения к БД
 func (c *Config) GetConnAddress() string {
 	return c.connAddress
 }
 
+// GetAuditFile путь к файлу-приёмнику, в который сохраняются логи аудита.
 func (c *Config) GetAuditFile() string {
 	return c.auditFile
 }
 
+// GetAuditAddress полный URL удаленного сервера-приёмника, куда отправляются логи аудита.
 func (c *Config) GetAuditAddress() string {
 	return c.auditAddress
 }

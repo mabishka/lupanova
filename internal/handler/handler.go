@@ -9,12 +9,14 @@ import (
 	"github.com/mabishka/lupanova/internal/service"
 )
 
+// StorageServer сервер обработки запросов.
 type StorageServer struct {
 	model.Storage
 	u     *url.URL
 	audit model.Audit
 }
 
+// New создание сервера обработки запросов.
 func New(address string) *StorageServer {
 	u, err := url.Parse(address)
 	if err != nil {
@@ -24,10 +26,12 @@ func New(address string) *StorageServer {
 	return &StorageServer{Storage: service.New(), u: u}
 }
 
+// SetLoader установка мета хранения данных.
 func (p *StorageServer) SetLoader(loader model.Storage) {
 	p.Storage = loader
 }
 
+// SetAudit установка места отправки аудита.
 func (p *StorageServer) SetAudit(audit model.Audit) {
 	p.audit = audit
 }

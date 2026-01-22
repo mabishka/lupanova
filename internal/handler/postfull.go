@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Эндпоинт с методом POST и путём /.
+// HandlerPostFull Эндпоинт с методом POST и путём /.
 // Сервер принимает в теле запроса строку URL как text/plain
 // и возвращает ответ с кодом 201 и сокращённым URL как text/plain.
 func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +51,7 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 	user := getUser(r)
 	short, shorterr := p.GetShort(r.Context(), full, user)
 	if shorterr != nil && !errors.Is(shorterr, utils.ErrConflict) {
-		if errors.Is(shorterr, model.ErrorDeleted) {
+		if errors.Is(shorterr, utils.ErrorDeleted) {
 			logger.Log().Error("error getting short", zap.Error(err))
 			w.WriteHeader(http.StatusGone)
 			return

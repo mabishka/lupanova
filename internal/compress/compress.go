@@ -20,6 +20,7 @@ const (
 	compressTypeEmpty   = ""
 )
 
+// ResponseWriter запись со сжатием.
 type ResponseWriter interface {
 	http.ResponseWriter
 	Close()
@@ -31,6 +32,7 @@ type compressResponseWriter struct {
 	contentEncoding     string
 }
 
+// Write запись со сжатием.
 func (w *compressResponseWriter) Write(b []byte) (int, error) {
 	if w.writer != nil {
 		return w.writer.Write(b)
@@ -38,6 +40,7 @@ func (w *compressResponseWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
+// Close закрытие writer.
 func (w *compressResponseWriter) Close() {
 	if w.writer != nil {
 		w.writer.Close()
@@ -139,6 +142,7 @@ func compress(w http.ResponseWriter, r *http.Request) ResponseWriter {
 	return cw
 }
 
+// WithCompress поддержка сжфтия (gzip, deflate).
 func WithCompress(h http.Handler) http.Handler {
 	compressFn := func(w http.ResponseWriter, r *http.Request) {
 

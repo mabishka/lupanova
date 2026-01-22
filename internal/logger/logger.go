@@ -10,10 +10,12 @@ import (
 
 var log *zap.Logger = zap.NewNop()
 
+// Log возвращает экземпляр логера.
 func Log() *zap.Logger {
 	return log
 }
 
+// InitLogger создание логера.
 func InitLogger(level string) error {
 	// преобразуем текстовый уровень логирования в zap.AtomicLevel
 	lvl, err := zap.ParseAtomicLevel(level)
@@ -34,6 +36,7 @@ func InitLogger(level string) error {
 	return nil
 }
 
+// WithLogging логирование сведений о запросах и ответах на сервере для всех эндпоинтов.
 func WithLogging(h http.Handler) http.Handler {
 
 	logFn := func(w http.ResponseWriter, r *http.Request) {

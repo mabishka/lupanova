@@ -13,9 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Эндпоинт с методом POST и путём /.
-// Сервер принимает в теле запроса JSON URL как application/json
-// и возвращает ответ с кодом 201 и сокращённым JSON URL как application/json.
+// HandlerPostFullJSON эндпоинт POST /api/shorten, который принимает в теле запроса JSON-объект {"url":"<some_url>"} и возвращает в ответ объект {"result":"<short_url>"}.
 func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Request) {
 
 	logger.Log().Info("HandlerPostFullJSON")

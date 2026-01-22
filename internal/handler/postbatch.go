@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Эндпоинт /api/shorten/batch, принимающий в теле запроса множество URL для сокращения в формате json
+// Эндпоинт /api/shorten/batch, принимающий в теле запроса множество URL для сокращения в формате json.
 func (p *StorageServer) HandlerPostBatch(w http.ResponseWriter, r *http.Request) {
 
 	logger.Log().Info("HandlerPostBatch")
