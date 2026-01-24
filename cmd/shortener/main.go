@@ -29,12 +29,12 @@ import (
 const stopTimeout = 5 * time.Second
 
 func main() {
-	if err := new(context.WithCancelCause(context.Background())); err != nil {
+	if err := create(context.WithCancelCause(context.Background())); err != nil {
 		log.Fatalf("exist with error: %v", err)
 	}
 }
 
-func new(ctx context.Context, fnCancel context.CancelCauseFunc) error {
+func create(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 
 	config := config.New()
 	if err := logger.InitLogger(config.GetLogLevel()); err != nil {
@@ -89,7 +89,7 @@ func new(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 	}
 
 	if config.GetAuditAddress() != "" {
-		auditEvent.Register(audit.NewFileObserver(config.GetAuditFile()))
+		auditEvent.Register(audit.NewAddressObserver(config.GetAuditAddress()))
 	}
 
 	server.SetAudit(auditEvent)

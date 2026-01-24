@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_new(t *testing.T) {
+func Test_create(t *testing.T) {
 
 	ctx, fnTimeoutCancel := context.WithTimeoutCause(context.Background(), time.Second*2, errors.New("stop timeout test"))
 	defer fnTimeoutCancel()
@@ -25,7 +25,7 @@ func Test_new(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := new(context.WithCancelCause(ctx))
+			err := create(context.WithCancelCause(ctx))
 			if test.wantErr {
 				assert.Error(t, err)
 				return
