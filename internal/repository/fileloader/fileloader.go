@@ -17,17 +17,19 @@ import (
 	"go.uber.org/zap"
 )
 
+// FileLoader файловое хранилище.
 type FileLoader struct {
 	*sync.Mutex
 	fileName string
 	fileSize int64
 }
 
+// New создание файлового хранилища.
 func New(fileName string) *FileLoader {
 	return &FileLoader{Mutex: &sync.Mutex{}, fileName: fileName}
 }
 
-// return map [short string] full string
+// Load загрузка данных из файла.
 func (p *FileLoader) Load(ctx context.Context) (map[string]string, error) {
 
 	if err := p.create(); err != nil {
@@ -56,6 +58,7 @@ func (p *FileLoader) Load(ctx context.Context) (map[string]string, error) {
 	return response, nil
 }
 
+// GetShortList получение списка сокращенных адресов из файла.
 func (p *FileLoader) GetShortList(ctx context.Context, fullList []model.FullItem, user string) (map[string]string, error) {
 	if err := p.create(); err != nil {
 		return nil, err
@@ -98,6 +101,7 @@ func (p *FileLoader) GetShortList(ctx context.Context, fullList []model.FullItem
 	return storeList, nil
 }
 
+// GetShort получение сокращенного адреса по полному из файла.
 func (p *FileLoader) GetShort(ctx context.Context, full string, user string) (string, error) {
 
 	if err := p.create(); err != nil {
@@ -133,15 +137,21 @@ func (p *FileLoader) GetShort(ctx context.Context, full string, user string) (st
 	return short, nil
 }
 
+// GetFull получение полного адреса по сокращенному из файла.
 func (p *FileLoader) GetFull(ctx context.Context, short string) (string, error) {
 	err := fmt.Errorf("full not found for short %s", short)
 	logger.Log().Error("error", zap.Error(err))
 	return "", fmt.Errorf("full not found for short %s", short)
 }
 
+// GetUserList получение адресов пользователя user из файла.
 func (p *FileLoader) GetUserList(ctx context.Context, user string) ([]model.StoreItem, error) {
 	return nil, errors.New("unsupport")
+}
 
+// DeleteList удаление адресов из файла.
+func (p *FileLoader) DeleteList(context.Context, []string, string) error {
+	return errors.New("unsupport")
 }
 
 func (p *FileLoader) preSave(file *os.File) error {
@@ -245,8 +255,4 @@ func (p *FileLoader) exist() (bool, error) {
 	p.fileSize = stat.Size()
 
 	return p.fileSize != 0, nil
-}
-
-func (p *FileLoader) DeleteList(context.Context, []string, string) error {
-	return errors.New("unsupport")
 }

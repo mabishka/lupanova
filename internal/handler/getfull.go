@@ -1,17 +1,17 @@
 package handler
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/mabishka/lupanova/internal/logger"
 	"github.com/mabishka/lupanova/internal/model"
+	"github.com/mabishka/lupanova/pkg/utils"
 	"go.uber.org/zap"
 )
 
-// Эндпоинт с методом GET и путём /{id},
+// HandlerGetFull Эндпоинт с методом GET и путём /{id},
 // где id — идентификатор сокращённого URL (например, /EwHXdJfB).
 // В случае успешной обработки запроса сервер возвращает ответ с кодом 307
 // и оригинальным URL в HTTP-заголовке Location.
@@ -31,9 +31,10 @@ func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	full, err := p.GetFull(context.TODO(), id)
+	user := getUser(r)
+	full, err := p.GetFull(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, model.ErrorDeleted) {
+		if errors.Is(err, utils.ErrorDeleted) {
 			logger.Log().Error("error getting full (is deleted)", zap.Error(err))
 			w.WriteHeader(http.StatusGone)
 			return
@@ -45,4 +46,6 @@ func (p *StorageServer) HandlerGetFull(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(model.HeaderLocation, full)
 	w.WriteHeader(http.StatusTemporaryRedirect)
+
+	p.sendAudit(r.Context(), model.ActionFollow, user, full)
 }

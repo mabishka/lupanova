@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Server сервис скоращения адресов.
 type Server struct {
 	*sync.RWMutex
 	shortList map[string]string // map [short string] full string
@@ -21,6 +22,7 @@ type Server struct {
 	loader    model.StorageLoader
 }
 
+// New создание сервиса сокращения адресов.
 func New() *Server {
 	return &Server{
 		RWMutex:   &sync.RWMutex{},
@@ -30,6 +32,7 @@ func New() *Server {
 	}
 }
 
+// Load загрузка данных в сервис сокращения адресов.
 func (p *Server) Load(ctx context.Context, loader model.StorageLoader) error {
 	if loader == nil {
 		return errors.New("empty loader")
@@ -54,6 +57,7 @@ func checkFull(full string) error {
 	return nil
 }
 
+// GetShortList получение списка сокращенных адресов.
 func (p *Server) GetShortList(ctx context.Context, fullList []model.FullItem, user string) ([]model.ShortItem, error) {
 	shortList := make([]model.ShortItem, 0, len(fullList))
 	storeList := make([]model.FullItem, 0, len(fullList))
@@ -86,6 +90,7 @@ func (p *Server) GetShortList(ctx context.Context, fullList []model.FullItem, us
 	return shortList, err
 }
 
+// GetShort получение сокращенного адреса по полному.
 func (p *Server) GetShort(ctx context.Context, full string, user string) (string, error) {
 
 	logger.Log().Info("service.GetFull", zap.String("full", full))
@@ -109,6 +114,7 @@ func (p *Server) GetShort(ctx context.Context, full string, user string) (string
 	return short, nil
 }
 
+// GetFull получение полного адреса по сокращенному.
 func (p *Server) GetFull(ctx context.Context, short string) (string, error) {
 
 	logger.Log().Info("service.GetFull", zap.String("short", short))
@@ -128,14 +134,15 @@ func (p *Server) GetFull(ctx context.Context, short string) (string, error) {
 
 	logger.Log().Info("service.GetFull return full", zap.String("short", short), zap.String("full", full))
 	return full, nil
-
 }
 
+// GetUserList получение списка адресов пользователя user.
 func (p *Server) GetUserList(ctx context.Context, user string) ([]model.StoreItem, error) {
 	return p.loader.GetUserList(ctx, user)
 
 }
 
+// DeleteList удаление адресов.
 func (p *Server) DeleteList(ctx context.Context, short []string, user string) error {
 	for _, v := range short {
 		p.deleteShort(v)

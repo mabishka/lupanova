@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
@@ -10,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Эндпоинт /api/shorten/batch, принимающий в теле запроса множество URL для сокращения в формате json
+// Эндпоинт /api/shorten/batch, принимающий в теле запроса множество URL для сокращения в формате json.
 func (p *StorageServer) HandlerPostBatch(w http.ResponseWriter, r *http.Request) {
 
 	logger.Log().Info("HandlerPostBatch")
@@ -37,7 +36,7 @@ func (p *StorageServer) HandlerPostBatch(w http.ResponseWriter, r *http.Request)
 	}
 
 	logger.Log().Info("request", zap.Int("count", len(request)))
-	response, err := p.GetShortList(context.TODO(), request, getUser(r))
+	response, err := p.GetShortList(r.Context(), request, getUser(r))
 	if err != nil {
 		logger.Log().Error("error getting short", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)

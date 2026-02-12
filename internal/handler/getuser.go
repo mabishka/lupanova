@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
@@ -16,7 +15,7 @@ func getUser(r *http.Request) string {
 	return auth.GetUser(token)
 }
 
-// Эндпоинт /api/shorten/batch, принимающий в теле запроса множество URL для сокращения в формате json
+// HandlerGetUser хендлер GET /api/user/urls, который возвращает пользователю все когда-либо сокращённые им URL.
 func (p *StorageServer) HandlerGetUser(w http.ResponseWriter, r *http.Request) {
 
 	logger.Log().Info("HandlerGetUser")
@@ -26,28 +25,7 @@ func (p *StorageServer) HandlerGetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/*
-		contentType := r.Header.Get(model.HeaderContentType)
-		if contentType != model.ContentTypeJSON {
-			logger.Log().Error("error context type")
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-	*/
-
-	/*
-		user, err := r.Cookie(model.CookieUser)
-		if err != nil {
-			if errors.Is(err, http.ErrNoCookie) {
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-	*/
-
-	response, err := p.GetUserList(context.TODO(), getUser(r))
+	response, err := p.GetUserList(r.Context(), getUser(r))
 	if err != nil {
 		logger.Log().Error("error getting short", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)

@@ -13,11 +13,13 @@ import (
 	"go.uber.org/zap"
 )
 
+// Connector интерфейс подключения к БД.
 type Connector interface {
 	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
 	ExecContext(context.Context, string, ...any) (sql.Result, error)
 }
 
+// Create создание таблиц в БД.
 func Create(ctx context.Context, conn Connector) error {
 
 	_, err := conn.ExecContext(ctx,
@@ -37,6 +39,7 @@ func Create(ctx context.Context, conn Connector) error {
 	return err
 }
 
+// LoadList загрузка адресов.
 func LoadList(ctx context.Context, conn Connector) (map[string]string, error) {
 
 	rows, err := conn.QueryContext(ctx, "select s_full, s_short from t_data where not coalesce(b_deleted, false)")
@@ -69,6 +72,7 @@ func LoadList(ctx context.Context, conn Connector) (map[string]string, error) {
 	return list, nil
 }
 
+// GetFull получение полного адреса по сокращенному из БД.
 func GetFull(ctx context.Context, conn Connector, short string) (string, error) {
 	rows, err := conn.QueryContext(ctx, "select s_full, coalesce(b_deleted, false) from t_data where s_short = $1", short)
 	if err != nil {
@@ -104,13 +108,14 @@ func GetFull(ctx context.Context, conn Connector, short string) (string, error) 
 	if deleted {
 		err := fmt.Errorf("full name for %s is deleted", short)
 		logger.Log().Error("error", zap.Error(err))
-		return "", model.ErrorDeleted
+		return "", utils.ErrorDeleted
 
 	}
 
 	return *full, nil
 }
 
+// GetShort получение сокращенного адреса по полному из БД.
 func GetShort(ctx context.Context, conn Connector, full string, user string) (string, error) {
 	if short, err := getShort(ctx, conn, full); err == nil {
 		logger.Log().Info("GetShort from db ok", zap.String("full", full), zap.String("short", short))
@@ -129,6 +134,8 @@ func GetShort(ctx context.Context, conn Connector, full string, user string) (st
 	}
 	return short, nil
 }
+
+// GetUser получение всех адресов пользователя user из БД.
 func GetUser(ctx context.Context, conn Connector, user string) ([]model.StoreItem, error) {
 	rows, err := conn.QueryContext(ctx, "select s_full, s_short from t_data where u_user = $1 and not coalesce(b_deleted, false)", user)
 	if err != nil {
@@ -155,6 +162,7 @@ func GetUser(ctx context.Context, conn Connector, user string) ([]model.StoreIte
 	return resp, nil
 }
 
+// Delete удаление сокращенных адресов из БД.
 func Delete(ctx context.Context, conn Connector, short []string, user string) error {
 	_, err := conn.ExecContext(ctx, "update t_data set b_deleted = true where s_short = any($1) and u_user = $2", short, user)
 	if err != nil {
@@ -211,7 +219,7 @@ func getShort(ctx context.Context, conn Connector, full string) (string, error) 
 	if deleted {
 		err = fmt.Errorf("short name for %s is deleted", full)
 		logger.Log().Error("error", zap.Error(err))
-		return "", model.ErrorDeleted
+		return "", utils.ErrorDeleted
 	}
 
 	return *short, nil

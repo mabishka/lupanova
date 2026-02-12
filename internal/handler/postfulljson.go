@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -14,9 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Эндпоинт с методом POST и путём /.
-// Сервер принимает в теле запроса JSON URL как application/json
-// и возвращает ответ с кодом 201 и сокращённым JSON URL как application/json.
+// HandlerPostFullJSON эндпоинт POST /api/shorten, который принимает в теле запроса JSON-объект {"url":"<some_url>"} и возвращает в ответ объект {"result":"<short_url>"}.
 func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Request) {
 
 	logger.Log().Info("HandlerPostFullJSON")
@@ -50,7 +47,8 @@ func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	short, shorterr := p.GetShort(context.TODO(), full, getUser(r))
+	user := getUser(r)
+	short, shorterr := p.GetShort(r.Context(), full, user)
 	if shorterr != nil && !errors.Is(shorterr, utils.ErrConflict) {
 		logger.Log().Error("error getting short", zap.Error(shorterr))
 		w.WriteHeader(http.StatusBadRequest)
@@ -76,4 +74,5 @@ func (p *StorageServer) HandlerPostFullJSON(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(http.StatusCreated)
 	}
 	w.Write(enc)
+	p.sendAudit(r.Context(), model.ActionShorten, user, full)
 }

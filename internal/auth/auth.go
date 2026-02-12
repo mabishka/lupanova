@@ -15,11 +15,13 @@ const (
 	secret = "qwerty"
 )
 
+// Claims пользователь для авторизации.
 type Claims struct {
 	jwt.RegisteredClaims
 	User string
 }
 
+// WithAuth авторизация.
 func WithAuth(h http.Handler) http.Handler {
 	authFn := func(w http.ResponseWriter, r *http.Request) {
 
@@ -85,6 +87,7 @@ func newCookie(w http.ResponseWriter, r *http.Request) {
 	r.Header.Set(model.HeaderAuth, auth)
 }
 
+// GetUser возвращает пользователя.
 func GetUser(auth string) string {
 	claims := &Claims{}
 	if token, err := jwt.ParseWithClaims(auth, claims, func(token *jwt.Token) (any, error) {
