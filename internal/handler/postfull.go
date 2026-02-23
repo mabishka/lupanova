@@ -42,7 +42,7 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 	defer r.Body.Close()
 
 	full := strings.TrimSpace(string(body))
-	if _, err := url.ParseRequestURI(full); err != nil {
+	if _, err = url.ParseRequestURI(full); err != nil {
 		logger.Log().Error("error parsing request", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)
 		return
