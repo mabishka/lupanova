@@ -35,7 +35,7 @@ func Test_setAddress(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			test.pre()
-			got := setAddress(test.have.envAddress, test.have.flagName, test.have.defaultAddress, test.have.description)
+			got := setParamString(test.have.envAddress, test.have.flagName, test.have.defaultAddress, test.have.description)
 
 			assert.Equal(t, test.want, *got)
 		})
@@ -61,6 +61,29 @@ func Test_validateServerAddress(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			got := validateServerAddress(test.address, test.defaultAddress)
 			assert.Equal(t, test.want, got)
+		})
+	}
+}
+
+func Test_setParamString(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		address        string
+		defaultAddress string
+		want           string
+	}{
+		{
+			name:           "positiveDefault",
+			address:        "",
+			defaultAddress: defaultServerAddress,
+			want:           defaultServerAddress,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := setParamString(envServerAddress, flagServerAddress, defaultServerAddress, descServerAddress)
+			assert.NotEmpty(t, got)
 		})
 	}
 }
@@ -134,6 +157,108 @@ func TestConfig_GetServerAddress(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			assert.Equal(t, test.want, config.GetServerAddress())
+		})
+	}
+}
+
+func TestConfig_GetLogLevel(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		want string
+	}{
+		{
+			name: "positive",
+			want: defaultLogLevel,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.want, DefaultConfig.GetLogLevel())
+		})
+	}
+}
+
+func TestConfig_GetFileName(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		want string
+	}{
+		{
+			name: "positive",
+			want: defaultFileName,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.want, DefaultConfig.GetFileName())
+		})
+	}
+}
+
+func TestConfig_GetConnAddress(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		want string
+	}{
+		{
+			name: "positive",
+			want: defaultConnAddress,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.want, DefaultConfig.GetConnAddress())
+		})
+	}
+}
+
+func TestConfig_GetAuditFile(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		want string
+	}{
+		{
+			name: "positive",
+			want: defaultAuditFile,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.want, DefaultConfig.GetAuditFile())
+		})
+	}
+}
+
+func TestConfig_GetAuditAddress(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		want string
+	}{
+		{
+			name: "positive",
+			want: defaultAuditAddress,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.want, DefaultConfig.GetAuditAddress())
+		})
+	}
+}
+
+func TestConfig_IsEnableHTTPS(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		want bool
+	}{
+		{
+			name: "positive",
+			want: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.want, DefaultConfig.IsEnableHTTPS())
 		})
 	}
 }

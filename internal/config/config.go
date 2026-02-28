@@ -54,6 +54,11 @@ const (
 	flagAuditAddress    = "audit-url"
 	envAuditAddress     = "AUDIT_URL"
 	descAuditAddress    = "полный URL удаленного сервера-приёмника, куда отправляются логи аудита"
+
+	defaultEnableHttps = false
+	flagEnableHttps    = "s"
+	envEnableHttps     = "ENABLE_HTTPS"
+	descEnableHttps    = "использовать HTTPS"
 )
 
 // DefaultConfig дефолтовый конфиг для тестов.
@@ -63,6 +68,8 @@ var DefaultConfig = &Config{
 	logLevel:      defaultLogLevel,
 	fileName:      defaultFileName,
 	connAddress:   defaultConnAddress,
+	auditFile:     defaultAuditFile,
+	auditAddress:  defaultAuditAddress,
 }
 
 // Config структура для хранения конфига.
@@ -74,18 +81,20 @@ type Config struct {
 	connAddress   string
 	auditFile     string
 	auditAddress  string
+	enableHTTPS   bool
 }
 
 // New создает и инициализирует структуру с конфигурацией.
 func New() *Config {
 
-	serverAddress := setAddress(envServerAddress, flagServerAddress, defaultServerAddress, descServerAddress)
-	baseAddress := setAddress(envBaseAddress, flagBaseAddress, defaultBaseAddress, descBaseAddress)
-	logLevel := setAddress(envLogLevel, flagLogLevel, defaultLogLevel, descLogLevel)
-	fileName := setAddress(envFileName, flagFileName, defaultFileName, descFileName)
-	connAddress := setAddress(envConnAddress, flagConnAddress, defaultConnAddress, descConnAddress)
-	auditFile := setAddress(envAuditFile, flagAuditFile, defaultAuditFile, descAuditFile)
-	auditAddress := setAddress(envAuditAddress, flagAuditAddress, defaultAuditAddress, descAuditAddress)
+	serverAddress := setParamString(envServerAddress, flagServerAddress, defaultServerAddress, descServerAddress)
+	baseAddress := setParamString(envBaseAddress, flagBaseAddress, defaultBaseAddress, descBaseAddress)
+	logLevel := setParamString(envLogLevel, flagLogLevel, defaultLogLevel, descLogLevel)
+	fileName := setParamString(envFileName, flagFileName, defaultFileName, descFileName)
+	connAddress := setParamString(envConnAddress, flagConnAddress, defaultConnAddress, descConnAddress)
+	auditFile := setParamString(envAuditFile, flagAuditFile, defaultAuditFile, descAuditFile)
+	auditAddress := setParamString(envAuditAddress, flagAuditAddress, defaultAuditAddress, descAuditAddress)
+	enableHTTPS := setParamBool(envEnableHttps, flagEnableHttps, defaultEnableHttps, descEnableHttps)
 
 	flag.Parse()
 
@@ -97,17 +106,26 @@ func New() *Config {
 		connAddress:   *connAddress,
 		auditFile:     *auditFile,
 		auditAddress:  validateBaseAddress(*auditAddress, defaultAuditAddress),
+		enableHTTPS:   *enableHTTPS,
 	}
 }
 
-func setAddress(envAddress, flagName, defaultAddress, description string) *string {
-	flagaddress := flag.String(flagName, defaultAddress, description)
-	if address, ok := os.LookupEnv(envAddress); ok && address != "" {
-		return &address
+func setParamString(env, flagName, defaultAddress, description string) *string {
+	respFlag := flag.String(flagName, defaultAddress, description)
+	if respEnv, ok := os.LookupEnv(env); ok && respEnv != "" {
+		return &respEnv
 	}
-	return flagaddress
+	return respFlag
 }
 
+func setParamBool(env, flagName string, defaultParam bool, description string) *bool {
+	respFflag := flag.Bool(flagName, defaultParam, description)
+	if x, ok := os.LookupEnv(env); ok && x != "" {
+		respEnv := true
+		return &respEnv
+	}
+	return respFflag
+}
 func validateServerAddress(address, defaultAddress string) string {
 	addrList := strings.Split(address, ":")
 	if len(addrList) < 1 || len(addrList) > 2 || len(addrList) == 1 && addrList[0] == "" {
@@ -166,4 +184,9 @@ func (c *Config) GetAuditFile() string {
 // GetAuditAddress полный URL удаленного сервера-приёмника, куда отправляются логи аудита.
 func (c *Config) GetAuditAddress() string {
 	return c.auditAddress
+}
+
+// IsEnableHTTPS использовать HTTPS
+func (c *Config) IsEnableHTTPS() bool {
+	return c.enableHTTPS
 }
