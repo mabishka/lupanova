@@ -36,6 +36,7 @@ const (
 	valueBool
 )
 
+// ConfigValue - параметр конфигурации
 type ConfigValue struct {
 	defaultValue any
 	flagName     []string
@@ -62,18 +63,6 @@ const (
 	configConfigFile    = "config_file"
 )
 
-/*
-	type jsonConfig struct {
-	    serverAddress string `json:"server_address"` // : "localhost:8080", // аналог переменной окружения SERVER_ADDRESS или флага -a
-	    baseAddress   string `json:"base_url"` // : "http://localhost", // аналог переменной окружения BASE_URL или флага -b
-	    fileName      string `json:"file_storage_path"` // : "/path/to/file.db", // аналог переменной окружения FILE_STORAGE_PATH или флага -f
-	    connAddress   string `json:"database_dsn` // ": "", // аналог переменной окружения DATABASE_DSN или флага -d
-	    enableHTTPS   bool `json:"enable_https"` // : true, // аналог переменной окружения ENABLE_HTTPS или флага -s
-	    logLevel      string `json:"log_level"` // : "Info", // аналог переменной окружения LOG_LEVEL или флага -l
-	    auditFile     string `json:"audit_file"` // : "", // аналог переменной окружения AUDIT_FILE или флага -audit-file
-	    auditAddress  string `json:"audit_url"` // : "" // аналог переменной окружения AUDIT_URL или флага -audit-url
-	}
-*/
 const (
 	defaultServerAddress = ":8080"
 	defaultBaseAddress   = "http://localhost:8080"
@@ -94,107 +83,10 @@ var (
 	}
 )
 
-/*
-const (
-	defaultServerAddress = ":8080"
-	flagServerAddress    = "a"
-	envServerAddress     = "SERVER_ADDRESS"
-	descServerAddress    = "адрес запуска HTTP-сервера"
-
-	defaultBaseAddress = "http://localhost:8080"
-	flagBaseAddress    = "b"
-	envBaseAddress     = "BASE_URL"
-	descBaseAddress    = "базовый адрес результирующего сокращённого URL"
-
-	defaultLogLevel = "Info"
-	flagLogLevel    = "l"
-	envLogLevel     = "LOG_LEVEL"
-	descLogLevel    = "уровень логирования"
-
-	defaultFileName = ""
-	flagFileName    = "f"
-	envFileName     = "FILE_STORAGE_PATH"
-	descFileName    = "файл для хранения сокращенных адресов"
-
-	defaultConnAddress = ""
-	flagConnAddress    = "d"
-	envConnAddress     = "DATABASE_DSN"
-	descConnAddress    = "строка с адресом подключения к БД"
-
-	defaultAuditFile = ""
-	flagAuditFile    = "audit-file"
-	envAuditFile     = "AUDIT_FILE"
-	descAuditFile    = "путь к файлу-приёмнику, в который сохраняются логи аудита"
-
-	defaultAuditAddress = ""
-	flagAuditAddress    = "audit-url"
-	envAuditAddress     = "AUDIT_URL"
-	descAuditAddress    = "полный URL удаленного сервера-приёмника, куда отправляются логи аудита"
-
-	defaultEnableHTTPS = false
-	flagEnableHTTPS    = "s"
-	envEnableHTTPS     = "ENABLE_HTTPS"
-	descEnableHTTPS    = "использовать HTTPS"
-)
-*/
-
-// DefaultConfig дефолтовый конфиг для тестов.
-/*
-var DefaultConfig = &Config{
-	serverAddress: defaultServerAddress,
-	baseAddress:   defaultBaseAddress,
-	logLevel:      defaultLogLevel,
-	fileName:      defaultFileName,
-	connAddress:   defaultConnAddress,
-	auditFile:     defaultAuditFile,
-	auditAddress:  defaultAuditAddress,
-}
-*/
-
 // Config структура для хранения конфига.
 type Config struct {
 	list map[configType]*ConfigValue
-	/*
-		serverAddress string
-		baseAddress   string
-		logLevel      string
-		fileName      string
-		connAddress   string
-		auditFile     string
-		auditAddress  string
-		enableHTTPS   bool
-	*/
 }
-
-/*
-type ConfigFile struct {
-	serverAddress string
-	baseAddress   string
-		logLevel      string
-		fileName      string
-		connAddress   string
-		auditFile     string
-		auditAddress  string
-		enableHTTPS   bool
-
-}
-*/
-
-/*
-var (
-	config = map[configType]*ConfigValue{
-		configServerAddress: {defaultValue: ":8080", flagName: "a", envName: "SERVER_ADDRESS", description: "", valueType: valueString},
-		configBaseAddress:   {defaultValue: "http://localhost:8080", flagName: "b", envName: "BASE_URL", description: "", source: sourceDefault, valueType: valueString},
-		configLogLevel:      {defaultValue: "Info", flagName: "l", envName: "LOG_LEVEL", description: "", valueType: valueString},
-		configFileName:      {defaultValue: "", flagName: "f", envName: "FILE_STORAGE_PATH", description: "", valueType: valueString},
-		configConnAddress:   {defaultValue: "", flagName: "d", envName: "DATABASE_DSN", description: "", valueType: valueString},
-		configAuditFile:     {defaultValue: "", flagName: "audit-file", envName: "AUDIT_FILE", description: "", valueType: valueString},
-		configAuditAddress:  {defaultValue: "", flagName: "audit-url", envName: "AUDIT_URL", description: "", valueType: valueString},
-		configEnableHttps:   {defaultValue: "", flagName: "s", envName: "ENABLE_HTTPS", description: "использовать HTTPS", valueType: valueBool},
-		configConfigFile:    {defaultValue: "", flagName: "c", envName: "CONFIG", description: "файл конфигурации", valueType: valueString},
-	}
-)
-*/
 
 var fn sync.Once
 
@@ -257,88 +149,9 @@ func New() *Config {
 				}
 			}
 		}
-
-		/*
-			serverAddress := setParamString(envServerAddress, flagServerAddress, defaultServerAddress, descServerAddress)
-			baseAddress := setParamString(envBaseAddress, flagBaseAddress, defaultBaseAddress, descBaseAddress)
-			logLevel := setParamString(envLogLevel, flagLogLevel, defaultLogLevel, descLogLevel)
-			fileName := setParamString(envFileName, flagFileName, defaultFileName, descFileName)
-			connAddress := setParamString(envConnAddress, flagConnAddress, defaultConnAddress, descConnAddress)
-			auditFile := setParamString(envAuditFile, flagAuditFile, defaultAuditFile, descAuditFile)
-			auditAddress := setParamString(envAuditAddress, flagAuditAddress, defaultAuditAddress, descAuditAddress)
-			enableHTTPS := setParamBool(envEnableHTTPS, flagEnableHTTPS, defaultEnableHTTPS, descEnableHTTPS)
-
-			flag.Parse()
-
-			x = &Config{
-				serverAddress: validateServerAddress(*serverAddress, defaultServerAddress),
-				baseAddress:   validateBaseAddress(*baseAddress, defaultBaseAddress),
-				logLevel:      *logLevel,
-				fileName:      *fileName,
-				connAddress:   *connAddress,
-				auditFile:     *auditFile,
-				auditAddress:  validateBaseAddress(*auditAddress, defaultAuditAddress),
-				enableHTTPS:   *enableHTTPS,
-			}
-		*/
 	})
 	return &Config{list: configData}
 }
-
-/*
-
- */
-
-// setParamString reurn usage, value
-/*
-func setParam(env, flagName, defaultAddress, description string) (usage bool, respFlag *flag) {
-	f := flag.Lookup(flagName)
-	if f != nil {
-		respFlag = &f.Value
-	}
-	respFlag := flag.String(flagName, defaultAddress, description)
-	if respEnv, ok := os.LookupEnv(env); ok && respEnv != "" {
-		return sourceEnv, &respEnv
-	}
-	return respFlag
-}
-
-
-func setParamBool(env, flagName string, defaultParam bool, description string) *bool {
-	respFflag := flag.Bool(flagName, defaultParam, description)
-	if x, ok := os.LookupEnv(env); ok && x != "" {
-		respEnv := true
-		return &respEnv
-	}
-	return respFflag
-}
-*/
-/*
-func validateServerAddress(address, defaultAddress string) string {
-	addrList := strings.Split(address, ":")
-	if len(addrList) < 1 || len(addrList) > 2 || len(addrList) == 1 && addrList[0] == "" {
-		return defaultAddress
-	}
-
-	if len(addrList) < 2 || addrList[1] == "" {
-		return addrList[0]
-	}
-	return net.JoinHostPort(addrList[0], addrList[1])
-}
-
-func validateBaseAddress(address, defaultAddress string) string {
-	u, err := url.Parse(address)
-	if err != nil {
-		return defaultAddress
-	}
-
-	if u.Scheme == "" || u.Host == "" {
-		return defaultAddress
-	}
-
-	return u.String()
-}
-*/
 
 func (c *Config) getString(name configType) string {
 	if v, ok := c.list[name]; ok && v != nil && v.valueType == valueString && v.value != nil {
