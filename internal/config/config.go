@@ -58,7 +58,7 @@ const (
 	configConnAddress   = "database_dsn"
 	configAuditFile     = "audit_file"
 	configAuditAddress  = "audit_url"
-	configEnableHttps   = "enable_https"
+	configEnableHTTPS   = "enable_https"
 	configConfigFile    = "config_file"
 )
 
@@ -89,7 +89,7 @@ var (
 		configConnAddress:   {defaultValue: "", flagName: []string{"d"}, envName: "DATABASE_DSN", description: "", valueType: valueString},
 		configAuditFile:     {defaultValue: "", flagName: []string{"audit-file"}, envName: "AUDIT_FILE", description: "", valueType: valueString},
 		configAuditAddress:  {defaultValue: "", flagName: []string{"audit-url"}, envName: "AUDIT_URL", description: "", valueType: valueString},
-		configEnableHttps:   {defaultValue: false, flagName: []string{"s"}, envName: "ENABLE_HTTPS", description: "", valueType: valueBool},
+		configEnableHTTPS:   {defaultValue: false, flagName: []string{"s"}, envName: "ENABLE_HTTPS", description: "", valueType: valueBool},
 		configConfigFile:    {defaultValue: "", flagName: []string{"c", "config"}, envName: "CONFIG", description: "файл конфигурации", valueType: valueString},
 	}
 )
@@ -392,5 +392,5 @@ func (c *Config) GetAuditAddress() string {
 
 // IsEnableHTTPS использовать HTTPS
 func (c *Config) IsEnableHTTPS() bool {
-	return c.getBool(configEnableHttps)
+	return c.getBool(configEnableHTTPS)
 }

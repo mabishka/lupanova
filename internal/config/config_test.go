@@ -281,7 +281,7 @@ func TestConfig_getString(t *testing.T) {
 		},
 		{
 			name:  "negative_bool",
-			value: configEnableHttps,
+			value: configEnableHTTPS,
 			want:  "",
 		},
 	}
@@ -301,7 +301,7 @@ func TestConfig_getBool(t *testing.T) {
 	}{
 		{
 			name:  "positive",
-			value: configEnableHttps,
+			value: configEnableHTTPS,
 			want:  false,
 		},
 		{
