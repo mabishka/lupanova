@@ -131,6 +131,7 @@ func create(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 	router.Get("/api/user/urls", server.HandlerGetUser)
 
 	tlsConfig := &tls.Config{}
+
 	if config.IsEnableHTTPS() {
 		if cert, err := makeCertificate(); err == nil {
 			tlsConfig.Certificates = cert
