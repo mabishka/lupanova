@@ -13,6 +13,7 @@ type StorageLoader interface {
 	GetFull(ctx context.Context, short string) (string, error)
 	GetUserList(ctx context.Context, user string) ([]StoreItem, error)
 	DeleteList(context.Context, []string, string) error
+	GetStat(context.Context) (int, int, error)
 }
 
 // ConnLoader загрузчик соединения с БД.
@@ -28,6 +29,7 @@ type Storage interface {
 	GetShort(ctx context.Context, full string, user string) (string, error)
 	GetFull(ctx context.Context, short string) (string, error)
 	DeleteList(ctx context.Context, short []string, user string) error
+	GetStat(ctx context.Context) (int, int, error)
 
 	Load(ctx context.Context, loader StorageLoader) error
 }
