@@ -172,3 +172,10 @@ func (p *ConnLoader) deleteList(ctx context.Context, short []string, user string
 func (p *ConnLoader) DeleteList(ctx context.Context, short []string, user string) error {
 	return p.deleteList(ctx, short, user)
 }
+
+// GetStat получение статистики по пользователям и адресам.
+func (p *ConnLoader) GetStat(ctx context.Context) (int, int, error) {
+	userCount, userErr := db.GetUserCount(ctx, p.conn)
+	addressCount, addressErr := db.GetAddressCount(ctx, p.conn)
+	return userCount, addressCount, errors.Join(userErr, addressErr)
+}

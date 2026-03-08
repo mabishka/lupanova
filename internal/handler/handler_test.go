@@ -668,3 +668,90 @@ func TestStorageServer_HandlerDelete(t *testing.T) {
 		})
 	}
 }
+
+func TestStorageServer_HandlerGetStat(t *testing.T) {
+	type have struct {
+		method      string
+		contentType string
+		realIP      string
+	}
+	type want struct {
+		code        int
+		contentType string
+	}
+
+	server := New(addr)
+	router := chi.NewRouter()
+
+	router.Post(`/api/internal/stats`, server.HandlerGetStat)
+
+	go http.ListenAndServe(addr, router)
+
+	haveMethod := http.MethodGet
+	haveContentType := model.ContentTypeJSON
+	wantContentType := model.ContentTypeJSON
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for receiver constructor.
+		have have
+		want want
+	}{
+		{
+			name: "negative method",
+			have: have{
+				method:      http.MethodPost,
+				contentType: haveContentType,
+				realIP:      "127.0.0.1",
+			},
+			want: want{
+				code:        http.StatusBadRequest,
+				contentType: wantContentType,
+			},
+		},
+		{
+			name: "negative contentType",
+			have: have{
+				method:      haveMethod,
+				contentType: "plain/text",
+				realIP:      "127.0.0.1",
+			},
+			want: want{
+				code:        http.StatusForbidden,
+				contentType: wantContentType,
+			},
+		},
+		{
+			name: "negative IP",
+			have: have{
+				method:      haveMethod,
+				contentType: haveContentType,
+			},
+			want: want{
+				code:        http.StatusForbidden,
+				contentType: wantContentType,
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			r := httptest.NewRequest(test.have.method, `/api/internal/stats`, nil)
+			r.Header.Add(model.HeaderRealIP, test.have.realIP)
+			w := httptest.NewRecorder()
+			server.HandlerGetStat(w, r)
+
+			result := w.Result()
+			haveShort, _ := io.ReadAll(result.Body)
+			defer result.Body.Close()
+
+			assert.Equal(t, test.want.code, result.StatusCode)
+
+			if result.StatusCode == http.StatusCreated {
+				assert.Equal(t, test.want.contentType, result.Header.Get(model.HeaderContentType))
+
+				var response model.Response
+				err := json.Unmarshal(haveShort, &response)
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

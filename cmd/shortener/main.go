@@ -113,6 +113,7 @@ func create(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 	}
 
 	server.SetAudit(auditEvent)
+	server.SetTrustedSubnet(config.GetTrustedSubnet())
 
 	router := chi.NewRouter()
 
@@ -129,6 +130,7 @@ func create(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 	router.Get("/ping", connServer.HandlerGetPing)
 	router.Delete("/api/user/urls", server.HandlerDelete)
 	router.Get("/api/user/urls", server.HandlerGetUser)
+	router.Get("/api/internal/stats", server.HandlerGetStat)
 
 	tlsConfig := &tls.Config{}
 

@@ -272,3 +272,65 @@ func TestDelete(t *testing.T) {
 		})
 	}
 }
+
+func TestGetUserCount(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		conn    Connector
+		user    string
+		want    []model.StoreItem
+		wantErr bool
+	}{
+		{
+			conn:    &mock{},
+			wantErr: true,
+		},
+		{
+			conn:    &mockErr{},
+			wantErr: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, gotErr := GetUserCount(context.Background(), test.conn)
+			if test.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.NoError(t, gotErr)
+				assert.Equal(t, 0, got)
+			}
+		})
+	}
+}
+
+func TestGetAddressCount(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		conn    Connector
+		user    string
+		want    []model.StoreItem
+		wantErr bool
+	}{
+		{
+			conn:    &mock{},
+			wantErr: true,
+		},
+		{
+			conn:    &mockErr{},
+			wantErr: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, gotErr := GetAddressCount(context.Background(), test.conn)
+			if test.wantErr {
+				assert.Error(t, gotErr)
+			} else {
+				assert.NoError(t, gotErr)
+				assert.Equal(t, 0, got)
+			}
+		})
+	}
+}
