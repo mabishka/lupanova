@@ -65,11 +65,11 @@ func (p *StorageServer) HandlerGetStat(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func checkTrustedSubnet(realIp, subnet string) bool {
-	if realIp == "" || subnet == "" {
+func checkTrustedSubnet(real, subnet string) bool {
+	if real == "" || subnet == "" {
 		return false
 	}
-	x := net.ParseIP(realIp)
+	x := net.ParseIP(real)
 
 	_, s, err := net.ParseCIDR(subnet)
 	if err != nil {
