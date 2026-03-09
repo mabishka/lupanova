@@ -43,7 +43,7 @@ func (p *StorageServer) ShortenURL(ctx context.Context, x *proto.URLShortenReque
 
 func (p *StorageServer) ExpandURL(ctx context.Context, x *proto.URLExpandRequest) (*proto.URLExpandResponse, error) {
 	if x.GetId() == "" {
-		return nil, errors.New("Not allowed")
+		return nil, errors.New("not allowed")
 	}
 
 	user, err := getUserFromMd(ctx)

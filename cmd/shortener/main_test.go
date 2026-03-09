@@ -25,7 +25,7 @@ func Test_create(t *testing.T) {
 	}{
 		{
 			name:    "positive",
-			wantErr: true,
+			wantErr: false,
 		},
 	}
 	for _, test := range tests {
