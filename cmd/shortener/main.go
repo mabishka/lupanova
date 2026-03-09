@@ -161,7 +161,7 @@ func create(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 	var wg errgroup.Group
 
 	wg.Go(func() error {
-		return runHttp(defaultGrpcAddress, httpServer, config.IsEnableHTTPS())
+		return runHTTP(defaultGrpcAddress, httpServer, config.IsEnableHTTPS())
 	})
 
 	wg.Go(func() error {
@@ -200,7 +200,7 @@ func configureStop(ctx context.Context, gsrv *grpc.Server, srv *http.Server) {
 
 }
 
-func runHttp(address string, srv *http.Server, isEnableHTTPS bool) error {
+func runHTTP(address string, srv *http.Server, isEnableHTTPS bool) error {
 
 	l, err := net.Listen("tcp", address)
 	if err != nil {

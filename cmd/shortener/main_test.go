@@ -40,7 +40,7 @@ func Test_create(t *testing.T) {
 	}
 }
 
-func Test_runHttp(t *testing.T) {
+func Test_runHTTP(t *testing.T) {
 
 	cfg := config.New()
 	srv := handler.New(cfg.GetBaseAddress())
@@ -86,7 +86,7 @@ func Test_runHttp(t *testing.T) {
 
 			go configureStop(ctx, grpcServer, httpServer)
 
-			runHttp(cfg.GetServerAddress(), httpServer, test.enableHTTPS)
+			runHTTP(cfg.GetServerAddress(), httpServer, test.enableHTTPS)
 		})
 	}
 }
@@ -137,7 +137,7 @@ func Test_runGrpc(t *testing.T) {
 
 			go configureStop(ctx, grpcServer, httpServer)
 
-			runHttp(cfg.GetServerAddress(), httpServer, test.enableHTTPS)
+			runHTTP(cfg.GetServerAddress(), httpServer, test.enableHTTPS)
 		})
 	}
 }
