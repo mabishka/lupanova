@@ -7,11 +7,14 @@ import (
 	"time"
 
 	"github.com/mabishka/lupanova/internal/model"
+	"github.com/mabishka/lupanova/internal/proto"
 	"github.com/mabishka/lupanova/internal/service"
 )
 
 // StorageServer сервер обработки запросов.
 type StorageServer struct {
+	proto.UnimplementedShortenerServiceServer
+
 	model.Storage
 	u      *url.URL
 	audit  model.Audit

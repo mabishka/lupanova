@@ -52,11 +52,11 @@ func (p *StorageServer) HandlerPostFull(w http.ResponseWriter, r *http.Request) 
 	short, shorterr := p.GetShort(r.Context(), full, user)
 	if shorterr != nil && !errors.Is(shorterr, utils.ErrConflict) {
 		if errors.Is(shorterr, utils.ErrorDeleted) {
-			logger.Log().Error("error getting short", zap.Error(err))
+			logger.Log().Error("error getting short", zap.Error(shorterr))
 			w.WriteHeader(http.StatusGone)
 			return
 		}
-		logger.Log().Error("error getting short", zap.Error(err))
+		logger.Log().Error("error getting short", zap.Error(shorterr))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

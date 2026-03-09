@@ -16,6 +16,7 @@ const (
 	CookieUser = "User"
 
 	ContextValueUser = "User"
+	ContextValueAuth = "authorization"
 )
 
 // Запрос POST /api/shorten.
