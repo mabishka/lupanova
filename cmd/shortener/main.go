@@ -23,6 +23,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
 
 	"github.com/mabishka/lupanova/internal/auth"
 	"github.com/mabishka/lupanova/internal/compress"
@@ -30,12 +32,14 @@ import (
 	"github.com/mabishka/lupanova/internal/handler"
 	"github.com/mabishka/lupanova/internal/logger"
 	"github.com/mabishka/lupanova/internal/model"
+	"github.com/mabishka/lupanova/internal/proto"
 	"github.com/mabishka/lupanova/internal/repository/audit"
 	"github.com/mabishka/lupanova/internal/repository/connloader"
 	"github.com/mabishka/lupanova/internal/repository/fileloader"
 )
 
 const stopTimeout = 5 * time.Second
+const defaultGrpcAddress = ":5300"
 
 var (
 	buildVersion = "N/A"
@@ -113,6 +117,7 @@ func create(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 	}
 
 	server.SetAudit(auditEvent)
+	server.SetTrustedSubnet(config.GetTrustedSubnet())
 
 	router := chi.NewRouter()
 
@@ -129,6 +134,7 @@ func create(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 	router.Get("/ping", connServer.HandlerGetPing)
 	router.Delete("/api/user/urls", server.HandlerDelete)
 	router.Get("/api/user/urls", server.HandlerGetUser)
+	router.Get("/api/internal/stats", server.HandlerGetStat)
 
 	tlsConfig := &tls.Config{}
 
@@ -138,59 +144,129 @@ func create(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 		}
 	}
 
-	if err := run(ctx, &http.Server{
+	grpcServer := grpc.NewServer()
+	proto.RegisterShortenerServiceServer(grpcServer, server)
+
+	httpServer := &http.Server{
 		Addr:         config.GetServerAddress(),
 		Handler:      router,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 		TLSConfig:    tlsConfig,
-	}, config.IsEnableHTTPS()); err != nil {
+	}
+
+	go configureStop(ctx, grpcServer, httpServer)
+
+	var wg errgroup.Group
+
+	wg.Go(func() error {
+		return runHTTP(config.GetServerAddress(), httpServer, config.IsEnableHTTPS())
+	})
+
+	wg.Go(func() error {
+		return runGrpc(defaultGrpcAddress, grpcServer)
+	})
+
+	if err := wg.Wait(); err != nil {
 		fnCancel(err)
 		return err
 	}
 	fnCancel(nil)
 
+	logger.Log().Info("exit")
+
 	return nil
 }
 
-func run(ctx context.Context, srv *http.Server, isEnableHTTPS bool) error {
+func configureStop(ctx context.Context, gsrv *grpc.Server, srv *http.Server) {
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
-	go func() {
-		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	select {
+	case s := <-sigint:
+		logger.Log().Info("stop with signal", zap.String("signal", s.String()))
+	case <-ctx.Done():
+		logger.Log().Info("stop with context", zap.Error(context.Cause(ctx)))
+	}
 
-		select {
-		case s := <-sigint:
-			logger.Log().Info("stop with signal", zap.String("signal", s.String()))
-		case <-ctx.Done():
-			logger.Log().Info("stop with context", zap.Error(context.Cause(ctx)))
-		}
+	gsrv.GracefulStop()
 
-		stopCtx, cancel := context.WithTimeoutCause(context.Background(), stopTimeout, fmt.Errorf("server Shutdown with timeout %v", stopTimeout))
-		defer cancel()
-		if err := srv.Shutdown(stopCtx); err != nil {
-			logger.Log().Info("HTTP server shutdown", zap.Error(err))
-		}
-	}()
+	stopCtx, cancel := context.WithTimeoutCause(context.Background(), stopTimeout, fmt.Errorf("server Shutdown with timeout %v", stopTimeout))
+	defer cancel()
+	if err := srv.Shutdown(stopCtx); err != nil {
+		logger.Log().Info("HTTP server shutdown", zap.Error(err))
+	}
 
+}
+
+func runHTTP(address string, srv *http.Server, isEnableHTTPS bool) error {
+
+	l, err := net.Listen("tcp", address)
+	if err != nil {
+		return err
+	}
 	if isEnableHTTPS {
-		if err := srv.ListenAndServeTLS("", ""); err != http.ErrServerClosed {
-			logger.Log().Info("HTTP server ListenAndServe", zap.Error(err))
+		if err := srv.ServeTLS(l, "", ""); err != http.ErrServerClosed {
+			logger.Log().Info("HTTP server Serve", zap.Error(err))
 			return err
 		}
 	} else {
-		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			logger.Log().Info("HTTP server ListenAndServe", zap.Error(err))
+		if err := srv.Serve(l); err != http.ErrServerClosed {
+			logger.Log().Info("HTTP server Serve", zap.Error(err))
 			return err
 		}
 
 	}
-
-	logger.Log().Info("exit")
 	return nil
 }
 
+func runGrpc(address string, gsrv *grpc.Server) error {
+	l, err := net.Listen("tcp", address)
+	if err != nil {
+		return err
+	}
+
+	if err := gsrv.Serve(l); err != nil {
+		logger.Log().Info("GRPC server Serve", zap.Error(err))
+		return err
+	}
+	return nil
+}
+
+/*
+func run(_ context.Context, l net.Listener, gsrv *grpc.Server, srv *http.Server, isEnableHTTPS bool) error {
+
+		var wg errgroup.Group
+
+		wg.Go(func() error {
+			if isEnableHTTPS {
+				if err := srv.ServeTLS(l, "", ""); err != http.ErrServerClosed {
+					logger.Log().Info("HTTP server Serve", zap.Error(err))
+					return err
+				}
+			} else {
+				if err := srv.Serve(l); err != http.ErrServerClosed {
+					logger.Log().Info("HTTP server Serve", zap.Error(err))
+					return err
+				}
+
+			}
+			return nil
+		})
+
+		wg.Go(func() error {
+			if err := gsrv.Serve(l); err != http.ErrServerClosed {
+				logger.Log().Info("GRPC server Serve", zap.Error(err))
+				return err
+			}
+			return nil
+		})
+
+		logger.Log().Info("exit")
+		return wg.Wait()
+	}
+*/
 func makeCertificate() ([]tls.Certificate, error) {
 	// создаём шаблон сертификата
 	cert := &x509.Certificate{

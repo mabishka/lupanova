@@ -32,8 +32,7 @@ func (p *mock) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error
 
 func TestConnLoader_Ping(t *testing.T) {
 	tests := []struct {
-		name string // description of this test case
-		// Named input parameters for receiver constructor.
+		name     string
 		connName string
 		wantErr  bool
 	}{
@@ -59,8 +58,7 @@ func TestConnLoader_Ping(t *testing.T) {
 
 func TestConnLoader_create(t *testing.T) {
 	tests := []struct {
-		name string // description of this test case
-		// Named input parameters for receiver constructor.
+		name     string
 		connName string
 		wantErr  bool
 	}{
@@ -85,8 +83,7 @@ func TestConnLoader_create(t *testing.T) {
 
 func TestConnLoader_Load(t *testing.T) {
 	tests := []struct {
-		name string // description of this test case
-		// Named input parameters for receiver constructor.
+		name     string
 		connName string
 		want     map[string]string
 		wantErr  bool
@@ -118,14 +115,12 @@ func TestConnLoader_GetShort(t *testing.T) {
 	user := uuid.New().String()
 	haveShort, _ := p.GetShort(context.TODO(), haveFull, user)
 	tests := []struct {
-		name string // description of this test case
-		// Named input parameters for receiver constructor.
+		name     string
 		connName string
-		// Named input parameters for target function.
-		full    string
-		short   string
-		user    string
-		wantErr bool
+		full     string
+		short    string
+		user     string
+		wantErr  bool
 	}{
 		{
 			full:    haveFull,
@@ -155,14 +150,12 @@ func TestConnLoader_StoreList(t *testing.T) {
 	user := uuid.New().String()
 	haveShort, _ := p.GetShort(context.TODO(), haveFull, user)
 	tests := []struct {
-		name string // description of this test case
-		// Named input parameters for receiver constructor.
+		name     string
 		connName string
-		// Named input parameters for target function.
-		full    []model.FullItem
-		short   []model.ShortItem
-		user    string
-		wantErr bool
+		full     []model.FullItem
+		short    []model.ShortItem
+		user     string
+		wantErr  bool
 	}{
 		{
 			full:    []model.FullItem{{Full: haveFull, Corr: haveCorr}},
@@ -188,7 +181,7 @@ func TestConnLoader_GetUserList(t *testing.T) {
 	p := ConnLoader{conn: &mock{}}
 	user := uuid.New().String()
 	tests := []struct {
-		name    string // description of this test case
+		name    string
 		user    string
 		wantErr bool
 	}{
@@ -218,7 +211,7 @@ func TestConnLoader_deleteList(t *testing.T) {
 
 	dataShort := []string{haveShort}
 	tests := []struct {
-		name    string // description of this test case
+		name    string
 		short   []string
 		user    string
 		wantErr bool
@@ -247,10 +240,8 @@ func TestConnLoader_DeleteList(t *testing.T) {
 	haveFull := "full"
 	haveShort, _ := p.GetShort(context.TODO(), haveFull, user)
 	tests := []struct {
-		name string // description of this test case
-		// Named input parameters for receiver constructor.
-		addr string
-		// Named input parameters for target function.
+		name    string
+		addr    string
 		short   []string
 		user    string
 		wantErr bool
@@ -278,10 +269,8 @@ func TestConnLoader_GetFull(t *testing.T) {
 	user := uuid.New().String()
 	haveShort, _ := p.GetShort(context.TODO(), haveFull, user)
 	tests := []struct {
-		name string // description of this test case
-		// Named input parameters for receiver constructor.
-		addr string
-		// Named input parameters for target function.
+		name    string
+		addr    string
 		full    string
 		short   string
 		user    string
@@ -303,6 +292,35 @@ func TestConnLoader_GetFull(t *testing.T) {
 					assert.Equal(t, short, test.short)
 				}
 			}
+		})
+	}
+}
+
+func TestConnLoader_GetStat(t *testing.T) {
+	p := ConnLoader{conn: &mock{}}
+	tests := []struct {
+		name    string
+		addr    string
+		full    string
+		short   string
+		user    string
+		wantErr bool
+	}{
+		{
+			wantErr: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			a, b, gotErr := p.GetStat(context.TODO())
+			if test.wantErr {
+				assert.Error(t, gotErr)
+				return
+			}
+			assert.NoError(t, gotErr)
+			assert.NotEmpty(t, a)
+			assert.NotEmpty(t, b)
+
 		})
 	}
 }

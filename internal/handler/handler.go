@@ -7,14 +7,18 @@ import (
 	"time"
 
 	"github.com/mabishka/lupanova/internal/model"
+	"github.com/mabishka/lupanova/internal/proto"
 	"github.com/mabishka/lupanova/internal/service"
 )
 
 // StorageServer сервер обработки запросов.
 type StorageServer struct {
+	proto.UnimplementedShortenerServiceServer
+
 	model.Storage
-	u     *url.URL
-	audit model.Audit
+	u      *url.URL
+	audit  model.Audit
+	subnet string
 }
 
 // New создание сервера обработки запросов.
@@ -35,6 +39,11 @@ func (p *StorageServer) SetLoader(loader model.Storage) {
 // SetAudit установка места отправки аудита.
 func (p *StorageServer) SetAudit(audit model.Audit) {
 	p.audit = audit
+}
+
+// SetTrustedSubnet установка места отправки аудита.
+func (p *StorageServer) SetTrustedSubnet(subnet string) {
+	p.subnet = subnet
 }
 
 func (p *StorageServer) format(path string) string {

@@ -7,6 +7,7 @@ const (
 	HeaderAcceptEncoding  = "Accept-Encoding"
 	HeaderLocation        = "Location"
 	HeaderAuth            = "Authorisation"
+	HeaderRealIP          = "X-Real-IP"
 	ContentTypeText       = "text/plain"
 	ContentTypeJSON       = "application/json"
 	ContentTypeHTML       = "text/html"
@@ -15,6 +16,7 @@ const (
 	CookieUser = "User"
 
 	ContextValueUser = "User"
+	ContextValueAuth = "authorization"
 )
 
 // Запрос POST /api/shorten.
@@ -72,3 +74,14 @@ const (
 	ActionShorten = "shorten"
 	ActionFollow  = "follow"
 )
+
+// Ответ GET /api/internal/stats
+//
+//	{
+//	 "urls": <int>, // количество сокращённых URL в сервисе
+//	 "users": <int> // количество пользователей в сервисе
+//	}
+type StatData struct {
+	AddressCount int `json:"urls"`
+	UserCount    int `json:"users"`
+}

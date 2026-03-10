@@ -155,6 +155,11 @@ func (p *FileLoader) DeleteList(context.Context, []string, string) error {
 	return errors.New("unsupport")
 }
 
+// GetStat получение статистики по пользователям и адресам.
+func (p *FileLoader) GetStat(ctx context.Context) (int, int, error) {
+	return 0, 0, errors.New("unsupport")
+}
+
 func (p *FileLoader) preSave(file *os.File) error {
 	filesize := int64(p.fileSize) - 1
 	if err := file.Truncate(filesize); err != nil {
