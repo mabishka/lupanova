@@ -161,11 +161,11 @@ func create(ctx context.Context, fnCancel context.CancelCauseFunc) error {
 	var wg errgroup.Group
 
 	wg.Go(func() error {
-		return runHTTP(defaultGrpcAddress, httpServer, config.IsEnableHTTPS())
+		return runHTTP(config.GetServerAddress(), httpServer, config.IsEnableHTTPS())
 	})
 
 	wg.Go(func() error {
-		return runGrpc(config.GetServerAddress(), grpcServer)
+		return runGrpc(defaultGrpcAddress, grpcServer)
 	})
 
 	if err := wg.Wait(); err != nil {
@@ -227,7 +227,7 @@ func runGrpc(address string, gsrv *grpc.Server) error {
 		return err
 	}
 
-	if err := gsrv.Serve(l); err != http.ErrServerClosed {
+	if err := gsrv.Serve(l); err != nil {
 		logger.Log().Info("GRPC server Serve", zap.Error(err))
 		return err
 	}
